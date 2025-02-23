@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Command, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tag, X, Hash } from "lucide-react";
+import { Tag, X, Hash, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type TagType = {
