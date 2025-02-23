@@ -1,9 +1,8 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, RepeatIcon, Video, PersonStanding, Link2 } from "lucide-react";
+import { Bell, RepeatIcon, Video, PersonStanding, Link2, UserCheck, UserX, Mail, Help } from "lucide-react";
 import { type RecurrencePattern } from "../RecurrenceModal";
 import { type ReminderSettings } from "../ReminderModal";
 import {
@@ -71,17 +70,33 @@ export function MeetingFormFields({
     }
   };
 
+  const handleInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddAttendee();
+    }
+  };
+
   const handleRemoveAttendee = (email: string) => {
     setAttendees(attendees.filter(a => a.email !== email));
   };
 
-  const handleUpdateRSVP = (email: string, rsvp: "pending" | "accepted" | "declined" | "tentative") => {
-    setAttendees(attendees.map(a => a.email === email ? { ...a, rsvp } : a));
-  };
-
   const handleGenerateZoomLink = () => {
     // Here you would integrate with Zoom API
-    setLocation("https://zoom.us/j/generated-link");
+    alert("Zoom integration needs to be set up first. This would open the integration setup page.");
+  };
+
+  const getRsvpIcon = (rsvp: "pending" | "accepted" | "declined" | "tentative") => {
+    switch (rsvp) {
+      case "accepted":
+        return <UserCheck className="h-4 w-4 text-green-500" />;
+      case "declined":
+        return <UserX className="h-4 w-4 text-red-500" />;
+      case "tentative":
+        return <Help className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Mail className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -206,19 +221,31 @@ export function MeetingFormFields({
           {meetingType === "online" ? "Meeting Link" : "Location"}
         </Label>
         <div className="col-span-3 flex gap-2">
-          <Input
-            id="location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder={meetingType === "online" ? "Zoom/Meet link" : "Meeting room or address"}
-            className="flex-1"
-          />
+          {meetingType === "online" && location ? (
+            <a 
+              href={location.startsWith('http') ? location : `https://${location}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-blue-500 hover:text-blue-700 underline break-all"
+            >
+              {location}
+            </a>
+          ) : (
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={meetingType === "online" ? "Zoom/Meet link" : "Meeting room or address"}
+              className="flex-1"
+            />
+          )}
           {meetingType === "online" && (
             <Button
               type="button"
               variant="outline"
               size="icon"
               onClick={handleGenerateZoomLink}
+              title="Set up Zoom integration"
             >
               <Link2 className="h-4 w-4" />
             </Button>
@@ -232,6 +259,7 @@ export function MeetingFormFields({
             <Input
               value={newAttendeeEmail}
               onChange={(e) => setNewAttendeeEmail(e.target.value)}
+              onKeyPress={handleInputKeyPress}
               placeholder="Enter email address"
               type="email"
               className="flex-1"
@@ -241,18 +269,8 @@ export function MeetingFormFields({
           <div className="space-y-2">
             {attendees.map((attendee) => (
               <div key={attendee.email} className="flex items-center gap-2 p-2 rounded-md bg-neutral-50 border border-neutral-200">
+                {getRsvpIcon(attendee.rsvp)}
                 <span className="flex-1 text-sm">{attendee.email}</span>
-                <Select value={attendee.rsvp} onValueChange={(value: "pending" | "accepted" | "declined" | "tentative") => handleUpdateRSVP(attendee.email, value)}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="accepted">Accepted</SelectItem>
-                    <SelectItem value="declined">Declined</SelectItem>
-                    <SelectItem value="tentative">Maybe</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Button
                   type="button"
                   variant="ghost"
