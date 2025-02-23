@@ -190,10 +190,33 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right">Dependencies</Label>
-                <div className="col-span-3 space-y-3">
-                  {dependencies.length > 0 && (
+                <div className="col-span-3 space-y-2">
+                  {remainingTasks.length > 0 && (
+                    <Select onValueChange={handleAddDependency}>
+                      <SelectTrigger className="w-full border-dashed">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add dependency</span>
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {remainingTasks.map(task => (
+                            <SelectItem key={task.id} value={task.id}>
+                              <div className="flex items-center gap-2">
+                                <Link2 className="h-3.5 w-3.5 text-neutral-400" />
+                                {task.title}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {dependencies.length > 0 ? (
                     <div className="space-y-1.5">
                       {dependencies.map(dep => (
                         <div
@@ -215,30 +238,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                         </div>
                       ))}
                     </div>
-                  )}
-                  
-                  {remainingTasks.length > 0 ? (
-                    <Select onValueChange={handleAddDependency}>
-                      <SelectTrigger className="w-full border-dashed">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Add dependency</span>
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {remainingTasks.map(task => (
-                            <SelectItem key={task.id} value={task.id}>
-                              <div className="flex items-center gap-2">
-                                <Link2 className="h-3.5 w-3.5 text-neutral-400" />
-                                {task.title}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  ) : dependencies.length > 0 ? (
+                  ) : !remainingTasks.length ? (
                     <p className="text-sm text-muted-foreground italic">No more tasks available</p>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-2 py-4 px-3 border-2 border-dashed border-neutral-200 rounded-lg text-center">
