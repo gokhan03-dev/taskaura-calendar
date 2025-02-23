@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Bell, Mail } from "lucide-react";
 
-export type NotificationType = "in-app" | "email" | "both";
+export type NotificationType = {
+  inApp: boolean;
+  email: boolean;
+};
 
 export type ReminderTime = {
   value: number;
@@ -50,7 +53,7 @@ export function ReminderModal({
   const [settings, setSettings] = useState<ReminderSettings>(
     initialSettings || {
       time: { value: 15, unit: "minutes" },
-      notificationType: "in-app",
+      notificationType: { inApp: true, email: false },
       enabled: true,
     }
   );
@@ -114,33 +117,35 @@ export function ReminderModal({
             <div className="col-span-3 flex gap-2">
               <Button
                 type="button"
-                variant={settings.notificationType === "in-app" ? "default" : "outline"}
+                variant={settings.notificationType.inApp ? "default" : "outline"}
                 size="sm"
                 className="flex-1 h-9"
-                onClick={() => setSettings({ ...settings, notificationType: "in-app" })}
+                onClick={() => setSettings({
+                  ...settings,
+                  notificationType: {
+                    ...settings.notificationType,
+                    inApp: !settings.notificationType.inApp,
+                  }
+                })}
               >
                 <Bell className="h-4 w-4 mr-2" />
                 In-app
               </Button>
               <Button
                 type="button"
-                variant={settings.notificationType === "email" ? "default" : "outline"}
+                variant={settings.notificationType.email ? "default" : "outline"}
                 size="sm"
                 className="flex-1 h-9"
-                onClick={() => setSettings({ ...settings, notificationType: "email" })}
+                onClick={() => setSettings({
+                  ...settings,
+                  notificationType: {
+                    ...settings.notificationType,
+                    email: !settings.notificationType.email,
+                  }
+                })}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Email
-              </Button>
-              <Button
-                type="button"
-                variant={settings.notificationType === "both" ? "default" : "outline"}
-                size="sm"
-                className="flex-1 h-9"
-                onClick={() => setSettings({ ...settings, notificationType: "both" })}
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Both
               </Button>
             </div>
           </div>
