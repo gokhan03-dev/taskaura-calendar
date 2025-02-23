@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UserCheck, UserX, Mail } from "lucide-react";
 import { type Attendee } from "./types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AttendeesSectionProps {
   attendees: Attendee[];
@@ -18,8 +19,26 @@ export function AttendeesSection({
   newAttendeeEmail,
   setNewAttendeeEmail,
 }: AttendeesSectionProps) {
+  const { toast } = useToast();
+
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleAddAttendee = () => {
-    if (newAttendeeEmail && !attendees.some(a => a.email === newAttendeeEmail)) {
+    if (!newAttendeeEmail) return;
+
+    if (!isValidEmail(newAttendeeEmail)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid email format",
+        description: "Please enter a valid email address (e.g., user@example.com)",
+      });
+      return;
+    }
+
+    if (!attendees.some(a => a.email === newAttendeeEmail)) {
       setAttendees([...attendees, { email: newAttendeeEmail, rsvp: "pending" }]);
       setNewAttendeeEmail("");
     }
