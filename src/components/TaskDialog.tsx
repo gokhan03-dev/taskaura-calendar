@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -28,9 +27,9 @@ import {
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("medium");
+  const [priority, setPriority] = useState("low");
   const [date, setDate] = useState("");
-  const [category, setCategory] = useState("work");
+  const [category, setCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [dependencies, setDependencies] = useState<string[]>([]);
@@ -41,15 +40,15 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   ]);
   const [subTasks, setSubTasks] = useState<{ title: string; completed: boolean }[]>([]);
   const [newSubTask, setNewSubTask] = useState("");
-  const [isRecurrent, setIsRecurrent] = useState(false);
-  const [recurrencyType, setRecurrencyType] = useState("");
-  const [hasReminder, setHasReminder] = useState(false);
-  const [reminderTime, setReminderTime] = useState("");
-  const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
-  const [categories, setCategories] = useState([
-    "work", "personal", "shopping", "health"
-  ]);
+
+  // Recurrency states
+  const [recurrencyCount, setRecurrencyCount] = useState("1");
+  const [recurrencyUnit, setRecurrencyUnit] = useState("days");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  
+  // Reminder state
+  const [reminderTime, setReminderTime] = useState("15 minutes before");
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -59,7 +58,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm focus:outline-none min-h-[100px] apple-style-editor',
+        class: 'min-h-[120px] prose prose-sm focus:outline-none apple-style-editor',
       },
     },
   });
@@ -71,14 +70,17 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       description,
       priority,
       date,
+      recurrency: {
+        count: recurrencyCount,
+        unit: recurrencyUnit,
+        startDate,
+        endDate,
+      },
+      reminderTime,
       category,
       tags,
       dependencies,
       subTasks,
-      isRecurrent,
-      recurrencyType,
-      hasReminder,
-      reminderTime,
     });
     onOpenChange(false);
   };
@@ -96,314 +98,263 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
-
-  const removeSubTask = (index: number) => {
-    setSubTasks(subTasks.filter((_, i) => i !== index));
-  };
-
-  const toggleSubTask = (index: number) => {
-    const newSubTasks = [...subTasks];
-    newSubTasks[index].completed = !newSubTasks[index].completed;
-    setSubTasks(newSubTasks);
-  };
-
-  const handleAddCategory = () => {
-    if (newCategory && !categories.includes(newCategory)) {
-      setCategories([...categories, newCategory]);
-      setCategory(newCategory);
-      setNewCategory("");
-      setShowCategoryForm(false);
-    }
-  };
-
-  const filteredDependencies = availableDependencies.filter(
-    dep => !dependencies.includes(dep.id)
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Add New Task</DialogTitle>
-            <DialogDescription>
-              Create a new task with detailed information.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {/* Task Title */}
-            <div className="flex items-center gap-3">
-              <Heading className="h-4 w-4 text-gray-500 shrink-0" />
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">Create task</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Task Title */}
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
+            className="w-full text-lg"
+            required
+          />
+
+          {/* Task Description */}
+          <div className="rounded-lg border">
+            <EditorContent editor={editor} className="p-3" />
+          </div>
+
+          {/* Priority and Date */}
+          <div className="flex gap-2">
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="flex-1"
+            />
+
+            <Button type="button" size="icon" variant="outline">
+              <RepeatIcon className="h-4 w-4" />
+            </Button>
+            
+            <Button type="button" size="icon" variant="outline">
+              <Bell className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Recurrency Settings */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title"
-                className="flex-1"
-                required
+                type="number"
+                min="1"
+                value={recurrencyCount}
+                onChange={(e) => setRecurrencyCount(e.target.value)}
+                className="w-20"
               />
+              <Select value={recurrencyUnit} onValueChange={setRecurrencyUnit}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="days">Days</SelectItem>
+                  <SelectItem value="weeks">Weeks</SelectItem>
+                  <SelectItem value="months">Months</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            {/* Task Description */}
-            <div className="flex gap-3">
-              <Text className="h-4 w-4 text-gray-500 shrink-0 mt-2" />
-              <div className="flex-1 border rounded-md p-4 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 bg-white">
-                <EditorContent editor={editor} />
-              </div>
-            </div>
-
-            {/* Task Settings Row */}
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2 flex-1">
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger className="w-[120px]">
-                    <ArrowUp className="h-4 w-4 text-gray-500 mr-2" />
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                
-                <div className="flex items-center gap-2 w-[150px]">
-                  <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
-                
-                <div className="flex flex-col">
-                  <Button
-                    type="button"
-                    variant={isRecurrent ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setIsRecurrent(!isRecurrent)}
-                    className="mb-2"
-                  >
-                    <RepeatIcon className="h-4 w-4" />
-                  </Button>
-                  {isRecurrent && (
-                    <Select value={recurrencyType} onValueChange={setRecurrencyType}>
-                      <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="daily">Daily</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                
-                <div className="flex flex-col">
-                  <Button
-                    type="button"
-                    variant={hasReminder ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setHasReminder(!hasReminder)}
-                    className="mb-2"
-                  >
-                    <Bell className="h-4 w-4" />
-                  </Button>
-                  {hasReminder && (
-                    <Select value={reminderTime} onValueChange={setReminderTime}>
-                      <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Reminder" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="5min">5 minutes before</SelectItem>
-                          <SelectItem value="15min">15 minutes before</SelectItem>
-                          <SelectItem value="30min">30 minutes before</SelectItem>
-                          <SelectItem value="1hour">1 hour before</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Category */}
-            <div className="flex items-center gap-3">
-              <Folder className="h-4 w-4 text-gray-500 shrink-0" />
-              <div className="flex gap-2 flex-1">
-                {!showCategoryForm ? (
-                  <>
-                    <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowCategoryForm(true)}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex gap-2 flex-1">
-                    <Input
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="New category name"
-                      className="flex-1"
-                    />
-                    <Button type="button" onClick={handleAddCategory}>
-                      Add
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowCategoryForm(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Tags Input */}
-            <div className="flex items-start gap-3">
-              <Tags className="h-4 w-4 text-gray-500 shrink-0 mt-2" />
+            
+            <div className="flex gap-2">
               <div className="flex-1">
                 <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, 'tag')}
-                  placeholder="Type a tag and press Enter"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="Start date"
                 />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center text-xs bg-accent/10 text-accent px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 hover:text-accent-hover"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
               </div>
-            </div>
-
-            {/* Dependencies */}
-            <div className="flex items-start gap-3">
-              <List className="h-4 w-4 text-gray-500 shrink-0 mt-2" />
-              <div className="flex-1">
-                {filteredDependencies.length > 0 && (
-                  <Select onValueChange={(value) => setDependencies([...dependencies, value])}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add dependencies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {filteredDependencies.map((dep) => (
-                          <SelectItem key={dep.id} value={dep.id}>
-                            {dep.title}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                )}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {dependencies.map((dep, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center text-xs bg-accent/10 text-accent px-2 py-1 rounded-full"
-                    >
-                      {availableDependencies.find(d => d.id === dep)?.title}
-                      <button
-                        type="button"
-                        onClick={() => setDependencies(dependencies.filter(d => d !== dep))}
-                        className="ml-1 hover:text-accent-hover"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* SubTasks */}
-            <div className="flex items-start gap-3">
-              <List className="h-4 w-4 text-gray-500 shrink-0 mt-2" />
               <div className="flex-1">
                 <Input
-                  value={newSubTask}
-                  onChange={(e) => setNewSubTask(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, 'subtask')}
-                  placeholder="Add a subtask and press Enter"
-                  className="mb-2"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="End date (optional)"
                 />
-                <div className="space-y-1 text-sm">
-                  {subTasks.map((subtask, index) => (
-                    <div 
-                      key={index} 
-                      className={`flex items-center justify-between gap-2 p-2 rounded ${
-                        index % 2 === 0 ? 'bg-accent/5' : 'bg-background'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1">
-                        <input
-                          type="checkbox"
-                          checked={subtask.completed}
-                          onChange={() => toggleSubTask(index)}
-                          className="rounded border-gray-300 text-accent focus:ring-accent"
-                        />
-                        <span className={subtask.completed ? "line-through text-gray-500" : ""}>
-                          {subtask.title}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeSubTask(index)}
-                        className="hover:text-accent transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="submit" className="text-white">Create Task</Button>
+          {/* Reminder Time */}
+          <Select value={reminderTime} onValueChange={setReminderTime}>
+            <SelectTrigger>
+              <SelectValue placeholder="Reminder time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5 minutes before">5 minutes before</SelectItem>
+              <SelectItem value="15 minutes before">15 minutes before</SelectItem>
+              <SelectItem value="30 minutes before">30 minutes before</SelectItem>
+              <SelectItem value="1 hour before">1 hour before</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Tags */}
+          <div className="flex items-center gap-2">
+            <Input
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'tag')}
+              placeholder="Add new tag"
+              className="flex-1"
+            />
+            <Button type="button" size="icon" variant="outline">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-2">
+              {tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center text-xs bg-accent/10 text-accent px-2 py-1 rounded-full"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                    className="ml-1 hover:text-accent-hover"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Subtasks */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                value={newSubTask}
+                onChange={(e) => setNewSubTask(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, 'subtask')}
+                placeholder="Add subtask"
+                className="flex-1"
+              />
+              <Button type="button" size="icon" variant="outline">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {subTasks.length > 0 && (
+              <div className="space-y-1">
+                {subTasks.map((subtask, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center gap-2 p-2 rounded ${
+                      index % 2 === 0 ? 'bg-accent/5' : ''
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={subtask.completed}
+                      onChange={() => {
+                        const newSubTasks = [...subTasks];
+                        newSubTasks[index].completed = !newSubTasks[index].completed;
+                        setSubTasks(newSubTasks);
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-gray-500' : ''}`}>
+                      {subtask.title}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSubTasks(subTasks.filter((_, i) => i !== index))}
+                      className="text-gray-500 hover:text-accent"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Category */}
+          <div className="flex items-center gap-2">
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Add category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="work">Work</SelectItem>
+                  <SelectItem value="personal">Personal</SelectItem>
+                  <SelectItem value="shopping">Shopping</SelectItem>
+                  <SelectItem value="health">Health</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button type="button" size="icon" variant="outline">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Dependencies */}
+          <Select onValueChange={(value) => setDependencies([...dependencies, value])}>
+            <SelectTrigger>
+              <SelectValue placeholder="Related tasks (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {availableDependencies
+                  .filter(dep => !dependencies.includes(dep.id))
+                  .map(dep => (
+                    <SelectItem key={dep.id} value={dep.id}>
+                      {dep.title}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {dependencies.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-2">
+              {dependencies.map((depId, index) => {
+                const dep = availableDependencies.find(d => d.id === depId);
+                return (
+                  <span
+                    key={index}
+                    className="inline-flex items-center text-xs bg-accent/10 text-accent px-2 py-1 rounded-full"
+                  >
+                    {dep?.title}
+                    <button
+                      type="button"
+                      onClick={() => setDependencies(dependencies.filter(id => id !== depId))}
+                      className="ml-1 hover:text-accent-hover"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="text-white">
+              Create task
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
