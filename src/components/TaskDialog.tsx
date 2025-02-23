@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,7 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+  } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,12 +23,14 @@ import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
 import { Bell, Plus, RepeatIcon, Settings2 } from "lucide-react";
+import { TagInput, type TagType } from "./TagInput";
 
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("work");
   const [date, setDate] = useState("");
+  const [tags, setTags] = useState<TagType[]>([]);
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
@@ -40,6 +41,13 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     { id: "personal", name: "Personal", color: "#8B5CF6" },
   ]);
 
+  const tagSuggestions: TagType[] = [
+    { id: "1", label: "Important" },
+    { id: "2", label: "Urgent" },
+    { id: "3", label: "Follow-up" },
+    { id: "4", label: "Review" },
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({
@@ -47,6 +55,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       description,
       category,
       date,
+      tags,
       recurrencePattern,
       reminderSettings,
     });
@@ -122,6 +131,18 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                   >
                     <Settings2 className="h-4 w-4" />
                   </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="tags" className="text-right pt-2.5">
+                  Tags
+                </Label>
+                <div className="col-span-3">
+                  <TagInput
+                    value={tags}
+                    onChange={setTags}
+                    suggestions={tagSuggestions}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
