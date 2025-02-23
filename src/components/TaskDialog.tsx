@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
@@ -16,6 +16,7 @@ import { type TagType } from "./TagInput";
 import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
 import { useTasks } from "@/hooks/useTasks";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Task {
   id: string;
@@ -32,24 +33,49 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const { createTask } = useTasks();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("work");
+  const [category, setCategory] = useState<string | null>(null);
   const [date, setDate] = useState("");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
   const [showCategories, setShowCategories] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "work", name: "Work", color: "#0EA5E9" },
-    { id: "personal", name: "Personal", color: "#8B5CF6" },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [dependencies, setDependencies] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data: fetchedCategories, error } = await supabase
+        .from('categories')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      if (fetchedCategories) {
+        setCategories(fetchedCategories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          color: cat.color
+        })));
+        // Set default category if none selected
+        if (!category && fetchedCategories.length > 0) {
+          setCategory(fetchedCategories[0].id);
+        }
+      }
+    };
+
+    fetchCategories();
+  }, [category]);
+
   const handleAddDependency = (taskId: string) => {
     const taskToAdd = availableTasks.find(task => task.id === taskId);
-    if (taskToAdd && !dependencies.some(dep => dep.id !== taskId)) {
+    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
       setDependencies([...dependencies, taskToAdd]);
     }
   };
@@ -64,14 +90,14 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
       await createTask.mutateAsync({
         title,
         description,
-        category_id: category,
+        category_id: category || undefined,
         due_date: date || undefined,
       });
       
       // Reset form
       setTitle("");
       setDescription("");
-      setCategory("work");
+      setCategory(null);
       setDate("");
       setRecurrencePattern(undefined);
       setReminderSettings(undefined);
@@ -104,7 +130,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
               setTitle={setTitle}
               description={description}
               setDescription={setDescription}
-              category={category}
+              category={category || ''}
               setCategory={setCategory}
               date={date}
               setDate={setDate}
@@ -154,3 +180,4 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     </>
   );
 }
+
