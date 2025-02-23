@@ -1,17 +1,19 @@
 
 import { useState } from 'react';
 import { ChevronLeft, Home, Calendar, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   const menuItems = [
-    { icon: Home, label: 'All Tasks', count: 7 },
-    { icon: Calendar, label: 'Today', count: 1 },
-    { icon: Calendar, label: 'This Week', count: 2 },
-    { icon: Calendar, label: 'Upcoming', count: 1 },
-    { icon: Settings, label: 'Settings' },
-    { icon: HelpCircle, label: 'Help' },
+    { icon: Home, label: 'All Tasks', count: 7, path: '/' },
+    { icon: Calendar, label: 'Today', count: 1, path: '/today' },
+    { icon: Calendar, label: 'This Week', count: 2, path: '/week' },
+    { icon: Calendar, label: 'Upcoming', count: 1, path: '/upcoming' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: HelpCircle, label: 'Help', path: '/help' },
   ];
 
   return (
@@ -31,6 +33,7 @@ export const Sidebar = () => {
           <button
             key={index}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors"
+            onClick={() => navigate(item.path)}
           >
             <item.icon className="w-5 h-5 shrink-0" />
             {!collapsed && (
