@@ -17,7 +17,8 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-glass;
+    @apply bg-white/90 backdrop-blur-lg border border-white/20 shadow-glass;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -28,4 +29,14 @@
   .animation-delay-400 {
     animation-delay: 400ms;
   }
+}
+
+/* Recurrence indicator animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
