@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +23,7 @@ import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
 import { Bell, Plus, RepeatIcon, Settings2 } from "lucide-react";
+import { TagInput, TagType } from "./TagInput";
 
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
@@ -39,6 +39,15 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     { id: "work", name: "Work", color: "#0EA5E9" },
     { id: "personal", name: "Personal", color: "#8B5CF6" },
   ]);
+  const [tags, setTags] = useState<TagType[]>([]);
+  
+  const tagSuggestions: TagType[] = [
+    { id: "1", label: "Important" },
+    { id: "2", label: "Urgent" },
+    { id: "3", label: "Personal" },
+    { id: "4", label: "Work" },
+    { id: "5", label: "Study" },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +58,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       date,
       recurrencePattern,
       reminderSettings,
+      tags,
     });
     onOpenChange(false);
   };
@@ -160,6 +170,19 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
                     )}
                   </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="tags" className="text-right pt-2.5">
+                  Tags
+                </Label>
+                <div className="col-span-3">
+                  <TagInput
+                    value={tags}
+                    onChange={setTags}
+                    suggestions={tagSuggestions}
+                    maxTags={5}
+                  />
                 </div>
               </div>
             </div>
