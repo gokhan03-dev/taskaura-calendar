@@ -49,6 +49,9 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
               {task.title}
             </h4>
             <div className="flex items-center gap-2">
+              {task.recurrencePattern && (
+                <Repeat className="h-4 w-4 text-neutral-400" />
+              )}
               <span className="text-sm text-neutral-500">
                 {format(new Date(task.date), 'MMM dd')}
               </span>
@@ -92,10 +95,6 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
                 <List className="h-3 w-3 text-neutral-400" />
                 {completedSubtasks}/{totalSubtasks}
               </div>
-            )}
-
-            {task.recurrencePattern && (
-              <Repeat className="h-3 w-3 text-neutral-400" />
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 
 import { format } from "date-fns";
-import { Users, Video, MapPin, X } from "lucide-react";
+import { Users, Video, MapPin, X, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MeetingCardProps {
@@ -13,6 +13,7 @@ interface MeetingCardProps {
     attendees: { email: string; rsvp: string }[];
     meetingType: "online" | "in-person";
     location: string;
+    recurrencePattern?: { frequency: string; interval: number };
   };
   onEdit: () => void;
 }
@@ -29,6 +30,9 @@ export const MeetingCard = ({ meeting, onEdit }: MeetingCardProps) => {
       <div className="flex items-start justify-between gap-2 mb-1">
         <h4 className="font-medium text-blue-900">{meeting.title}</h4>
         <div className="flex items-center gap-2">
+          {meeting.recurrencePattern && (
+            <Repeat className="h-4 w-4 text-blue-400" />
+          )}
           <span className="text-sm text-blue-700">
             {format(new Date(`${meeting.date} ${meeting.time}`), 'MMM dd, HH:mm')}
           </span>
