@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -5,6 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ScheduleDialog } from "@/components/ScheduleDialog";
+import { TaskCard } from "@/components/TaskCard";
+import { MeetingCard } from "@/components/MeetingCard";
 
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
@@ -18,26 +21,55 @@ const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: stri
   </div>
 );
 
-const TaskCard = ({ title, description, date, category, priority }: any) => (
-  <div className="bg-white rounded-xl p-4 shadow-glass hover:shadow-lg transition-shadow">
-    <div className="flex items-start gap-3">
-      <input type="checkbox" className="mt-1" />
-      <div className="flex-1">
-        <h4 className="font-medium mb-1">{title}</h4>
-        <p className="text-sm text-neutral-500 mb-3">{description}</p>
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-1 text-xs rounded-md bg-neutral-100">{category}</span>
-          <span className="text-xs text-neutral-500">{date}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+
+  const mockTasks = [
+    {
+      id: "1",
+      title: "House Works",
+      description: "Do the house works properly.",
+      date: "2024-02-11",
+      category: "Personal",
+      completed: false,
+      tags: [{ id: "1", label: "Home" }],
+      subtasks: [
+        { id: "1", title: "Clean kitchen", completed: true },
+        { id: "2", title: "Vacuum living room", completed: false }
+      ],
+      recurrencePattern: { frequency: "weekly", interval: 1 }
+    },
+    {
+      id: "2",
+      title: "Meeting with Mike",
+      description: "About the new website",
+      date: "2024-02-22",
+      category: "Work",
+      completed: false,
+      tags: [{ id: "2", label: "Website" }],
+      subtasks: []
+    }
+  ];
+
+  const mockMeetings = [
+    {
+      id: "1",
+      title: "Team Sync",
+      description: "Weekly team sync meeting",
+      date: "2024-02-15",
+      time: "10:00",
+      attendees: [
+        { email: "john@example.com", rsvp: "accepted" },
+        { email: "jane@example.com", rsvp: "pending" }
+      ],
+      meetingType: "online",
+      location: "Google Meet"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -64,7 +96,10 @@ const Index = () => {
             <div className="flex gap-3">
               <Button 
                 className="bg-accent text-white hover:bg-accent-hover"
-                onClick={() => setTaskDialogOpen(true)}
+                onClick={() => {
+                  setSelectedTaskId(null);
+                  setTaskDialogOpen(true);
+                }}
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add a task
@@ -72,7 +107,10 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 className="border-accent text-accent hover:bg-accent hover:text-white"
-                onClick={() => setScheduleDialogOpen(true)}
+                onClick={() => {
+                  setSelectedMeetingId(null);
+                  setScheduleDialogOpen(true);
+                }}
               >
                 <CalendarPlus className="w-5 h-5 mr-2" />
                 Schedule Meeting
@@ -84,46 +122,65 @@ const Index = () => {
             <div>
               <h3 className="font-medium mb-4">To Do</h3>
               <div className="space-y-4">
-                <TaskCard
-                  title="House Works"
-                  description="Do the house works properly."
-                  date="Feb 11"
-                  category="Personal"
-                />
-                <TaskCard
-                  title="Meeting with Mike"
-                  description="About the new website"
-                  date="Feb 22"
-                  category="Work"
-                />
+                {mockTasks
+                  .filter(task => !task.completed)
+                  .map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => {
+                        setSelectedTaskId(task.id);
+                        setTaskDialogOpen(true);
+                      }}
+                    />
+                  ))}
+                {mockMeetings.map(meeting => (
+                  <MeetingCard
+                    key={meeting.id}
+                    meeting={meeting}
+                    onEdit={() => {
+                      setSelectedMeetingId(meeting.id);
+                      setScheduleDialogOpen(true);
+                    }}
+                  />
+                ))}
               </div>
             </div>
             <div>
               <h3 className="font-medium mb-4">In Progress</h3>
               <div className="space-y-4">
-                <TaskCard
-                  title="2nd Task"
-                  description="task of the 2nd one"
-                  date="Feb 20"
-                  category="Work"
-                />
+                {/* Add in-progress tasks and meetings here */}
               </div>
             </div>
             <div>
               <h3 className="font-medium mb-4">Completed</h3>
               <div className="space-y-4">
-                <TaskCard
-                  title="First Task Ever"
-                  description="Do the best ever"
-                  date="Feb 27"
-                  category="Personal"
-                />
+                {mockTasks
+                  .filter(task => task.completed)
+                  .map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => {
+                        setSelectedTaskId(task.id);
+                        setTaskDialogOpen(true);
+                      }}
+                    />
+                  ))}
               </div>
             </div>
           </div>
 
-          <TaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
-          <ScheduleDialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen} />
+          <TaskDialog 
+            open={taskDialogOpen} 
+            onOpenChange={setTaskDialogOpen}
+            taskId={selectedTaskId}
+          />
+          <ScheduleDialog 
+            open={scheduleDialogOpen} 
+            onOpenChange={setScheduleDialogOpen}
+            meetingId={selectedMeetingId}
+          />
         </main>
       </div>
     </div>
