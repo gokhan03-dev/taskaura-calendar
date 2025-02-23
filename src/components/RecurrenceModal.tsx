@@ -11,9 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Calendar, Clock, RepeatIcon, X } from "lucide-react";
+import { Calendar, RepeatIcon } from "lucide-react";
 
 export type RecurrencePattern = {
   type: "daily" | "weekly" | "monthly" | "yearly";
@@ -32,13 +30,13 @@ interface RecurrenceModalProps {
 }
 
 const weekdays = [
-  { value: 0, label: "Sun" },
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
+  { value: 0, label: "S" },
+  { value: 1, label: "M" },
+  { value: 2, label: "T" },
+  { value: 3, label: "W" },
+  { value: 4, label: "T" },
+  { value: 5, label: "F" },
+  { value: 6, label: "S" },
 ];
 
 export function RecurrenceModal({
@@ -63,41 +61,18 @@ export function RecurrenceModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] glass-card">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RepeatIcon className="h-5 w-5" />
-            Recurrence Settings
+      <DialogContent className="sm:max-w-[425px] glass-card p-4">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <RepeatIcon className="h-4 w-4" />
+            Recurrence
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Recurrence Type */}
-          <div className="space-y-2">
-            <Label>Repeat</Label>
-            <Select
-              value={pattern.type}
-              onValueChange={(value: RecurrencePattern["type"]) =>
-                setPattern({ ...pattern, type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Interval */}
-          <div className="flex items-center gap-3">
-            <Label>Every</Label>
+        <div className="space-y-4">
+          {/* Recurrence Type and Interval */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Every</span>
             <Input
               type="number"
               min="1"
@@ -105,49 +80,57 @@ export function RecurrenceModal({
               onChange={(e) =>
                 setPattern({ ...pattern, interval: parseInt(e.target.value) || 1 })
               }
-              className="w-20"
+              className="w-16 h-8 text-sm"
             />
-            <span>
-              {pattern.type === "daily" && "days"}
-              {pattern.type === "weekly" && "weeks"}
-              {pattern.type === "monthly" && "months"}
-              {pattern.type === "yearly" && "years"}
-            </span>
+            <Select
+              value={pattern.type}
+              onValueChange={(value: RecurrencePattern["type"]) =>
+                setPattern({ ...pattern, type: value })
+              }
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="daily">Days</SelectItem>
+                  <SelectItem value="weekly">Weeks</SelectItem>
+                  <SelectItem value="monthly">Months</SelectItem>
+                  <SelectItem value="yearly">Years</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Weekly Options */}
           {pattern.type === "weekly" && (
-            <div className="space-y-2">
-              <Label>Repeat on</Label>
-              <div className="flex flex-wrap gap-2">
-                {weekdays.map((day) => (
-                  <Button
-                    key={day.value}
-                    type="button"
-                    variant={
-                      pattern.weekdays?.includes(day.value) ? "default" : "outline"
-                    }
-                    className="w-12 h-12 rounded-full p-0"
-                    onClick={() =>
-                      setPattern({
-                        ...pattern,
-                        weekdays: pattern.weekdays?.includes(day.value)
-                          ? pattern.weekdays.filter((d) => d !== day.value)
-                          : [...(pattern.weekdays || []), day.value],
-                      })
-                    }
-                  >
-                    {day.label}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-1">
+              {weekdays.map((day) => (
+                <Button
+                  key={day.value}
+                  type="button"
+                  variant={pattern.weekdays?.includes(day.value) ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 rounded-lg text-xs p-0"
+                  onClick={() =>
+                    setPattern({
+                      ...pattern,
+                      weekdays: pattern.weekdays?.includes(day.value)
+                        ? pattern.weekdays.filter((d) => d !== day.value)
+                        : [...(pattern.weekdays || []), day.value],
+                    })
+                  }
+                >
+                  {day.label}
+                </Button>
+              ))}
             </div>
           )}
 
           {/* Monthly Options */}
           {pattern.type === "monthly" && (
-            <div className="space-y-2">
-              <Label>Day of month</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Day</span>
               <Input
                 type="number"
                 min="1"
@@ -156,83 +139,98 @@ export function RecurrenceModal({
                 onChange={(e) =>
                   setPattern({ ...pattern, monthDay: parseInt(e.target.value) || 1 })
                 }
-                className="w-20"
+                className="w-16 h-8 text-sm"
               />
             </div>
           )}
 
           {/* End Options */}
-          <div className="space-y-4">
-            <Label>Ends</Label>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="endType"
-                  checked={endType === "never"}
-                  onChange={() => {
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm w-12">Ends</span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={endType === "never" ? "default" : "outline"}
+                  className="rounded-lg text-sm h-8"
+                  onClick={() => {
                     setEndType("never");
                     setPattern({ ...pattern, endDate: undefined, occurrences: undefined });
                   }}
-                />
-                <span>Never</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="endType"
-                  checked={endType === "date"}
-                  onChange={() => setEndType("date")}
-                />
-                <span>On</span>
-                {endType === "date" && (
-                  <Input
-                    type="date"
-                    value={pattern.endDate || ""}
-                    onChange={(e) =>
-                      setPattern({ ...pattern, endDate: e.target.value })
-                    }
-                    className="w-[160px]"
-                  />
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="endType"
-                  checked={endType === "occurrences"}
-                  onChange={() => setEndType("occurrences")}
-                />
-                <span>After</span>
-                {endType === "occurrences" && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={pattern.occurrences || ""}
-                      onChange={(e) =>
-                        setPattern({
-                          ...pattern,
-                          occurrences: parseInt(e.target.value) || undefined,
-                        })
-                      }
-                      className="w-20"
-                    />
-                    <span>occurrences</span>
-                  </div>
-                )}
+                >
+                  Never
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={endType === "date" ? "default" : "outline"}
+                  className="rounded-lg text-sm h-8"
+                  onClick={() => setEndType("date")}
+                >
+                  On date
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={endType === "occurrences" ? "default" : "outline"}
+                  className="rounded-lg text-sm h-8"
+                  onClick={() => setEndType("occurrences")}
+                >
+                  After
+                </Button>
               </div>
             </div>
+
+            {endType === "date" && (
+              <div className="flex items-center gap-2 pl-14">
+                <Input
+                  type="date"
+                  value={pattern.endDate || ""}
+                  onChange={(e) =>
+                    setPattern({ ...pattern, endDate: e.target.value })
+                  }
+                  className="w-[160px] h-8 text-sm"
+                />
+              </div>
+            )}
+
+            {endType === "occurrences" && (
+              <div className="flex items-center gap-2 pl-14">
+                <Input
+                  type="number"
+                  min="1"
+                  value={pattern.occurrences || ""}
+                  onChange={(e) =>
+                    setPattern({
+                      ...pattern,
+                      occurrences: parseInt(e.target.value) || undefined,
+                    })
+                  }
+                  className="w-16 h-8 text-sm"
+                />
+                <span className="text-sm">occurrences</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            size="sm"
+            className="rounded-lg"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save</Button>
+          <Button
+            onClick={handleSave}
+            size="sm"
+            className="rounded-lg"
+          >
+            Save
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

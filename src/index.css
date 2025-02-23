@@ -13,6 +13,11 @@
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
   }
+
+  /* Make black buttons have white text */
+  .bg-black, [class*='bg-neutral-900'], [class*='bg-primary'] {
+    @apply text-white;
+  }
 }
 
 @layer components {
