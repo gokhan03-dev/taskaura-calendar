@@ -15,6 +15,7 @@ import { CategoryModal, type Category } from "./CategoryModal";
 import { type TagType } from "./TagInput";
 import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
+import { useTasks } from "@/hooks/useTasks";
 
 interface Task {
   id: string;
@@ -28,6 +29,7 @@ interface TaskDialogProps {
 }
 
 export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
+  const { createTask } = useTasks();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("work");
@@ -47,7 +49,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
 
   const handleAddDependency = (taskId: string) => {
     const taskToAdd = availableTasks.find(task => task.id === taskId);
-    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
+    if (taskToAdd && !dependencies.some(dep => dep.id !== taskId)) {
       setDependencies([...dependencies, taskToAdd]);
     }
   };
@@ -56,20 +58,31 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({
-      title,
-      description,
-      category,
-      date,
-      recurrencePattern,
-      reminderSettings,
-      tags,
-      dependencies,
-      subtasks,
-    });
-    onOpenChange(false);
+    try {
+      await createTask.mutateAsync({
+        title,
+        description,
+        category_id: category,
+        due_date: date || undefined,
+      });
+      
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setCategory("work");
+      setDate("");
+      setRecurrencePattern(undefined);
+      setReminderSettings(undefined);
+      setTags([]);
+      setDependencies([]);
+      setSubtasks([]);
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+    }
   };
 
   const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
