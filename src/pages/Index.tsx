@@ -1,8 +1,9 @@
 
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
-import { Clock, Calendar, List, Plus } from "lucide-react";
+import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
@@ -57,10 +58,16 @@ const Index = () => {
                 className="w-full px-4 py-2 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-accent transition-all"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors">
-              <Plus className="w-5 h-5" />
-              Add a task
-            </button>
+            <div className="flex gap-3">
+              <Button className="bg-accent text-white hover:bg-accent-hover">
+                <Plus className="w-5 h-5 mr-2" />
+                Add a task
+              </Button>
+              <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
+                <CalendarPlus className="w-5 h-5 mr-2" />
+                Schedule Meeting
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-6">
