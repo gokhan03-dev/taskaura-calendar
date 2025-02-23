@@ -22,7 +22,7 @@ import {
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
-import { Bell, Plus, RepeatIcon, Settings2, Link2, ArrowDownToLine } from "lucide-react";
+import { Bell, Plus, RepeatIcon, Settings2, Link2, X } from "lucide-react";
 import { TagInput, TagType } from "./TagInput";
 
 interface Task {
@@ -78,6 +78,8 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   const handleRemoveDependency = (taskId: string) => {
     setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
+
+  const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
 
   return (
     <>
@@ -190,44 +192,63 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Dependencies</Label>
-                <div className="col-span-3">
-                  <Select onValueChange={handleAddDependency}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add dependency..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {availableTasks
-                          .filter(task => !dependencies.some(dep => dep.id === task.id))
-                          .map(task => (
+                <div className="col-span-3 space-y-3">
+                  {dependencies.length > 0 && (
+                    <div className="space-y-1.5">
+                      {dependencies.map(dep => (
+                        <div
+                          key={dep.id}
+                          className="group relative flex items-center gap-2 py-1.5 px-2.5 pr-8 rounded-md bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition-colors"
+                        >
+                          <Link2 className="h-3.5 w-3.5 text-neutral-400" />
+                          <span className="text-sm font-medium text-neutral-700">{dep.title}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveDependency(dep.id)}
+                            className="absolute right-1.5 opacity-0 group-hover:opacity-100 h-5 w-5 p-0 hover:bg-neutral-200"
+                          >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">Remove dependency</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {remainingTasks.length > 0 ? (
+                    <Select onValueChange={handleAddDependency}>
+                      <SelectTrigger className="w-full border-dashed">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add dependency</span>
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {remainingTasks.map(task => (
                             <SelectItem key={task.id} value={task.id}>
-                              {task.title}
+                              <div className="flex items-center gap-2">
+                                <Link2 className="h-3.5 w-3.5 text-neutral-400" />
+                                {task.title}
+                              </div>
                             </SelectItem>
                           ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <div className="mt-2 space-y-2">
-                    {dependencies.map(dep => (
-                      <div
-                        key={dep.id}
-                        className="flex items-center gap-2 p-2 rounded-md bg-neutral-50 border border-neutral-100 animate-fade-in"
-                      >
-                        <Link2 className="h-4 w-4 text-neutral-400" />
-                        <span className="flex-1 text-sm">{dep.title}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 hover:bg-neutral-200"
-                          onClick={() => handleRemoveDependency(dep.id)}
-                        >
-                          <ArrowDownToLine className="h-3 w-3" />
-                          <span className="sr-only">Remove dependency</span>
-                        </Button>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  ) : dependencies.length > 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No more tasks available</p>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 py-4 px-3 border-2 border-dashed border-neutral-200 rounded-lg text-center">
+                      <Link2 className="h-8 w-8 text-neutral-300" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-neutral-600">No dependencies yet</p>
+                        <p className="text-xs text-neutral-400">Add dependencies to track task relationships</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
