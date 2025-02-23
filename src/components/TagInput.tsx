@@ -18,7 +18,7 @@ interface TagInputProps {
   maxTags?: number;
 }
 
-export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: TagInputProps) {
+export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }: TagInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,7 +55,7 @@ export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: Tag
     [onChange, value]
   );
 
-  const filteredSuggestions = suggestions.filter(
+  const filteredSuggestions = (suggestions || []).filter(
     (suggestion) =>
       !value.some((tag) => tag.id === suggestion.id) &&
       suggestion.label.toLowerCase().includes(inputValue.toLowerCase())
@@ -104,28 +104,30 @@ export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: Tag
               disabled={value.length >= maxTags}
             />
           </PopoverTrigger>
-          <PopoverContent className="p-0" align="start">
-            <Command>
-              <CommandGroup>
-                {filteredSuggestions.map((suggestion) => (
-                  <CommandItem
-                    key={suggestion.id}
-                    value={suggestion.id}
-                    onSelect={() => {
-                      onChange([...value, suggestion]);
-                      setInputValue("");
-                      setOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Hash className="h-4 w-4" />
-                    {suggestion.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandEmpty>No results found.</CommandEmpty>
-            </Command>
-          </PopoverContent>
+          {filteredSuggestions.length > 0 && (
+            <PopoverContent className="p-0" align="start">
+              <Command>
+                <CommandGroup>
+                  {filteredSuggestions.map((suggestion) => (
+                    <CommandItem
+                      key={suggestion.id}
+                      value={suggestion.id}
+                      onSelect={() => {
+                        onChange([...value, suggestion]);
+                        setInputValue("");
+                        setOpen(false);
+                      }}
+                      className="gap-2"
+                    >
+                      <Hash className="h-4 w-4" />
+                      {suggestion.label}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandEmpty>No results found.</CommandEmpty>
+              </Command>
+            </PopoverContent>
+          )}
         </Popover>
       </div>
     </div>
