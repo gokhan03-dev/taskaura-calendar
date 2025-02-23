@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
 import { Bell, Plus, RepeatIcon, Settings2, Link2, X } from "lucide-react";
 import { TagInput, TagType } from "./TagInput";
+import { SubtaskInput, type Subtask } from "./SubtaskInput";
 
 interface Task {
   id: string;
@@ -46,12 +48,18 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   ]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [dependencies, setDependencies] = useState<Task[]>([]);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
-  const availableTasks: Task[] = [
-    { id: "1", title: "Setup Project" },
-    { id: "2", title: "Design UI" },
-    { id: "3", title: "Implement Backend" },
-  ];
+  const handleAddDependency = (taskId: string) => {
+    const taskToAdd = availableTasks.find(task => task.id === taskId);
+    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
+      setDependencies([...dependencies, taskToAdd]);
+    }
+  };
+
+  const handleRemoveDependency = (taskId: string) => {
+    setDependencies(dependencies.filter(dep => dep.id !== taskId));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,19 +72,9 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       reminderSettings,
       tags,
       dependencies,
+      subtasks,
     });
     onOpenChange(false);
-  };
-
-  const handleAddDependency = (taskId: string) => {
-    const taskToAdd = availableTasks.find(task => task.id === taskId);
-    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
-      setDependencies([...dependencies, taskToAdd]);
-    }
-  };
-
-  const handleRemoveDependency = (taskId: string) => {
-    setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
 
   const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
@@ -188,6 +186,15 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
                     )}
                   </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right">Subtasks</Label>
+                <div className="col-span-3">
+                  <SubtaskInput
+                    subtasks={subtasks}
+                    onChange={setSubtasks}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
