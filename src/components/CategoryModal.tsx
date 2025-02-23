@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Palette, Plus, Tag, Trash2 } from "lucide-react";
+import { Plus, Tag, Trash2 } from "lucide-react";
 
 export type Category = {
   id: string;
@@ -19,7 +19,7 @@ interface CategoryModalProps {
   onSave: (categories: Category[]) => void;
 }
 
-const defaultColors = [
+const colors = [
   "#8B5CF6", // Purple
   "#D946EF", // Pink
   "#F97316", // Orange
@@ -35,22 +35,19 @@ export function CategoryModal({
   onSave,
 }: CategoryModalProps) {
   const [localCategories, setLocalCategories] = useState<Category[]>(categories);
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    color: defaultColors[0],
-  });
+  const [newCategory, setNewCategory] = useState("");
 
   const handleAddCategory = () => {
-    if (!newCategory.name) return;
+    if (!newCategory) return;
     
     const category: Category = {
       id: Math.random().toString(36).substr(2, 9),
-      name: newCategory.name,
-      color: newCategory.color,
+      name: newCategory,
+      color: colors[localCategories.length % colors.length],
     };
 
     setLocalCategories([...localCategories, category]);
-    setNewCategory({ name: "", color: defaultColors[0] });
+    setNewCategory("");
   };
 
   const handleDeleteCategory = (id: string) => {
@@ -65,7 +62,7 @@ export function CategoryModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] glass-card p-4">
-        <DialogHeader className="mb-4">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Tag className="h-4 w-4" />
             Manage Categories
@@ -74,59 +71,42 @@ export function CategoryModal({
 
         <div className="space-y-4">
           {/* Add New Category */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-sm text-right">New</Label>
-            <div className="col-span-3 flex gap-2">
-              <Input
-                placeholder="Category name"
-                value={newCategory.name}
-                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                className="flex-1 h-9"
-              />
-              <div className="flex gap-1">
-                {defaultColors.map((color) => (
-                  <button
-                    key={color}
-                    className={`w-6 h-6 rounded ${
-                      newCategory.color === color ? "ring-2 ring-offset-2 ring-neutral-900" : ""
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewCategory({ ...newCategory, color })}
-                  />
-                ))}
-              </div>
-              <Button
-                type="button"
-                size="icon"
-                onClick={handleAddCategory}
-                disabled={!newCategory.name}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Add new category"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="flex-1 h-9 text-sm"
+            />
+            <Button
+              type="button"
+              size="icon"
+              onClick={handleAddCategory}
+              disabled={!newCategory}
+              className="h-9 w-9"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Category List */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {localCategories.map((category) => (
-              <div key={category.id} className="grid grid-cols-4 items-center gap-4">
-                <div className="text-sm text-right opacity-50">Category</div>
-                <div className="col-span-3 flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: category.color }}
-                  />
-                  <span className="flex-1">{category.name}</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleDeleteCategory(category.id)}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div key={category.id} className="flex items-center gap-2 text-sm">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className="flex-1">{category.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteCategory(category.id)}
+                  className="h-8 w-8 hover:bg-neutral-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </div>
