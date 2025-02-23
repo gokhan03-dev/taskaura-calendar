@@ -4,6 +4,8 @@ import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { TaskDialog } from "@/components/TaskDialog";
+import { MeetingDialog } from "@/components/MeetingDialog";
 
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
@@ -35,6 +37,8 @@ const TaskCard = ({ title, description, date, category, priority }: any) => (
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [meetingDialogOpen, setMeetingDialogOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -59,11 +63,18 @@ const Index = () => {
               />
             </div>
             <div className="flex gap-3">
-              <Button className="bg-accent text-white hover:bg-accent-hover">
+              <Button 
+                className="bg-accent text-white hover:bg-accent-hover"
+                onClick={() => setTaskDialogOpen(true)}
+              >
                 <Plus className="w-5 h-5 mr-2" />
                 Add a task
               </Button>
-              <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
+              <Button 
+                variant="outline" 
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+                onClick={() => setMeetingDialogOpen(true)}
+              >
                 <CalendarPlus className="w-5 h-5 mr-2" />
                 Schedule Meeting
               </Button>
@@ -111,6 +122,9 @@ const Index = () => {
               </div>
             </div>
           </div>
+
+          <TaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
+          <MeetingDialog open={meetingDialogOpen} onOpenChange={setMeetingDialogOpen} />
         </main>
       </div>
     </div>
