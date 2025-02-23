@@ -32,9 +32,16 @@ export const useTasks = () => {
   // Create task mutation
   const createTask = useMutation({
     mutationFn: async (newTask: CreateTaskInput) => {
+      if (!user) throw new Error('User must be authenticated to create tasks');
+      
+      const taskWithUserId = {
+        ...newTask,
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([newTask])
+        .insert(taskWithUserId)
         .select()
         .single();
 
