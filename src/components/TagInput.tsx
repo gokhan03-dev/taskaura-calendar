@@ -1,6 +1,6 @@
 
 import { useState, useRef, useCallback } from "react";
-import { Command, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command";
+import { Command, CommandGroup, CommandItem, CommandEmpty, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, X, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -106,26 +106,28 @@ export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
             <Command className="w-full">
-              <CommandGroup heading="Suggestions">
-                {filteredSuggestions.map((suggestion) => (
-                  <CommandItem
-                    key={suggestion.id}
-                    value={suggestion.id}
-                    onSelect={() => {
-                      onChange([...value, suggestion]);
-                      setInputValue("");
-                      setOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Hash className="h-4 w-4" />
-                    {suggestion.label}
-                  </CommandItem>
-                ))}
-                {filteredSuggestions.length === 0 && (
-                  <CommandEmpty>No suggestions found.</CommandEmpty>
-                )}
-              </CommandGroup>
+              <CommandList>
+                <CommandGroup heading="Suggestions">
+                  {filteredSuggestions.map((suggestion) => (
+                    <CommandItem
+                      key={suggestion.id}
+                      value={suggestion.id}
+                      onSelect={() => {
+                        onChange([...value, suggestion]);
+                        setInputValue("");
+                        setOpen(false);
+                      }}
+                      className="gap-2"
+                    >
+                      <Hash className="h-4 w-4" />
+                      {suggestion.label}
+                    </CommandItem>
+                  ))}
+                  {filteredSuggestions.length === 0 && (
+                    <CommandEmpty>No suggestions found.</CommandEmpty>
+                  )}
+                </CommandGroup>
+              </CommandList>
             </Command>
           </PopoverContent>
         </Popover>
