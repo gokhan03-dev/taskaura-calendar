@@ -12,7 +12,7 @@ import { useState } from "react";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { MeetingFormFields } from "./meeting/MeetingFormFields";
-import { Loader2, CloudSync } from "lucide-react";
+import { Loader2, CloudUpload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthProvider";
 
@@ -109,7 +109,7 @@ export function ScheduleDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                   {isSyncing ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <CloudSync className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
+                    <CloudUpload className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
                   )}
                   {!user && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
