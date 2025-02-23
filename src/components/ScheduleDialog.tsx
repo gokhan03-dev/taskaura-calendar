@@ -23,7 +23,7 @@ export function ScheduleDialog({
   const [duration, setDuration] = useState("60");
   const [meetingType, setMeetingType] = useState<"online" | "in-person">("online");
   const [location, setLocation] = useState("");
-  const [attendees, setAttendees] = useState<{ email: string; rsvp: string }[]>([]);
+  const [attendees, setAttendees] = useState<{ email: string; rsvp: "pending" | "accepted" | "declined" | "tentative" }[]>([]);
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<any>(null);
