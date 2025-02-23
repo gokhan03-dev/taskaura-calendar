@@ -1,6 +1,6 @@
 
 import { useState, useRef, useCallback } from "react";
-import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Command, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, X, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,7 @@ export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: Tag
             onChange([...value, newTag]);
           }
           setInputValue("");
+          setOpen(false);
         }
       } else if (e.key === "Backspace" && !input.value && value.length > 0) {
         onChange(value.slice(0, -1));
@@ -59,6 +60,27 @@ export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: Tag
       !value.some((tag) => tag.id === suggestion.id) &&
       suggestion.label.toLowerCase().includes(inputValue.toLowerCase())
   );
+
+  const handleSelect = (selectedValue: string) => {
+    if (value.length >= maxTags) return;
+
+    if (selectedValue === "create") {
+      if (inputValue && !value.some((tag) => tag.label.toLowerCase() === inputValue.toLowerCase())) {
+        const newTag: TagType = {
+          id: Math.random().toString(36).substring(2),
+          label: inputValue,
+        };
+        onChange([...value, newTag]);
+      }
+    } else {
+      const suggestion = suggestions.find((s) => s.id === selectedValue);
+      if (suggestion) {
+        onChange([...value, suggestion]);
+      }
+    }
+    setInputValue("");
+    setOpen(false);
+  };
 
   return (
     <div className="relative">
@@ -106,39 +128,31 @@ export function TagInput({ value, onChange, suggestions = [], maxTags = 5 }: Tag
           <PopoverContent className="p-0" align="start">
             <Command>
               <CommandGroup heading="Suggestions">
-                {filteredSuggestions.length > 0 ? (
-                  filteredSuggestions.map((suggestion) => (
-                    <CommandItem
-                      key={suggestion.id}
-                      onSelect={() => {
-                        onChange([...value, suggestion]);
-                        setInputValue("");
-                        setOpen(false);
-                      }}
-                      className="gap-2"
-                    >
-                      <Hash className="h-4 w-4" />
-                      {suggestion.label}
-                    </CommandItem>
-                  ))
-                ) : (
+                {filteredSuggestions.map((suggestion) => (
                   <CommandItem
-                    onSelect={() => {
-                      if (inputValue && value.length < maxTags) {
-                        const newTag: TagType = {
-                          id: Math.random().toString(36).substring(2),
-                          label: inputValue,
-                        };
-                        onChange([...value, newTag]);
-                        setInputValue("");
-                        setOpen(false);
-                      }
-                    }}
+                    key={suggestion.id}
+                    value={suggestion.id}
+                    onSelect={handleSelect}
+                    className="gap-2"
                   >
+                    <Hash className="h-4 w-4" />
+                    {suggestion.label}
+                  </CommandItem>
+                ))}
+                {inputValue && !filteredSuggestions.some(s => 
+                  s.label.toLowerCase() === inputValue.toLowerCase()
+                ) && (
+                  <CommandItem
+                    value="create"
+                    onSelect={handleSelect}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
                     Create "{inputValue}"
                   </CommandItem>
                 )}
               </CommandGroup>
+              <CommandEmpty>No results found.</CommandEmpty>
             </Command>
           </PopoverContent>
         </Popover>
