@@ -1,8 +1,6 @@
 
 import { useState, useRef, useCallback } from "react";
-import { Command, CommandGroup, CommandItem, CommandEmpty, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tag, X, Hash } from "lucide-react";
+import { Tag, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type TagType = {
@@ -14,13 +12,11 @@ export type TagType = {
 interface TagInputProps {
   value: TagType[];
   onChange: (tags: TagType[]) => void;
-  suggestions?: TagType[];
   maxTags?: number;
 }
 
-export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }: TagInputProps) {
+export function TagInput({ value = [], onChange, maxTags = 5 }: TagInputProps) {
   const [inputValue, setInputValue] = useState("");
-  const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = useCallback(
@@ -39,7 +35,6 @@ export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }
             onChange([...value, newTag]);
           }
           setInputValue("");
-          setOpen(false);
         }
       } else if (e.key === "Backspace" && !input.value && value.length > 0) {
         onChange(value.slice(0, -1));
@@ -53,12 +48,6 @@ export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }
       onChange(value.filter((tag) => tag.id !== tagToRemove.id));
     },
     [onChange, value]
-  );
-
-  const filteredSuggestions = (suggestions || []).filter(
-    (suggestion) =>
-      !value.some((tag) => tag.id === suggestion.id) &&
-      suggestion.label.toLowerCase().includes(inputValue.toLowerCase())
   );
 
   return (
@@ -89,48 +78,15 @@ export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }
             </button>
           </span>
         ))}
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <input
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value);
-                if (!open) setOpen(true);
-              }}
-              onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px] inline-flex h-8"
-              placeholder={value.length < maxTags ? "Add tag..." : ""}
-              disabled={value.length >= maxTags}
-            />
-          </PopoverTrigger>
-          <PopoverContent className="p-0" align="start">
-            <Command className="w-full">
-              <CommandList>
-                <CommandGroup heading="Suggestions">
-                  {filteredSuggestions.map((suggestion) => (
-                    <CommandItem
-                      key={suggestion.id}
-                      value={suggestion.id}
-                      onSelect={() => {
-                        onChange([...value, suggestion]);
-                        setInputValue("");
-                        setOpen(false);
-                      }}
-                      className="gap-2"
-                    >
-                      <Hash className="h-4 w-4" />
-                      {suggestion.label}
-                    </CommandItem>
-                  ))}
-                  {filteredSuggestions.length === 0 && (
-                    <CommandEmpty>No suggestions found.</CommandEmpty>
-                  )}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[120px] inline-flex h-8"
+          placeholder={value.length < maxTags ? "Add tag..." : ""}
+          disabled={value.length >= maxTags}
+        />
       </div>
     </div>
   );
