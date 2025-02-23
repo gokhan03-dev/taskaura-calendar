@@ -50,6 +50,13 @@ export function CategoryModal({
     setNewCategory("");
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCategory();
+    }
+  };
+
   const handleDeleteCategory = (id: string) => {
     setLocalCategories(localCategories.filter((cat) => cat.id !== id));
   };
@@ -76,6 +83,7 @@ export function CategoryModal({
               placeholder="Add new category"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="flex-1 h-9 text-sm"
             />
             <Button
