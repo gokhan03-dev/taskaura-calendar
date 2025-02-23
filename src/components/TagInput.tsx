@@ -104,30 +104,30 @@ export function TagInput({ value = [], onChange, suggestions = [], maxTags = 5 }
               disabled={value.length >= maxTags}
             />
           </PopoverTrigger>
-          {filteredSuggestions.length > 0 && (
-            <PopoverContent className="p-0" align="start">
-              <Command>
-                <CommandGroup>
-                  {filteredSuggestions.map((suggestion) => (
-                    <CommandItem
-                      key={suggestion.id}
-                      value={suggestion.id}
-                      onSelect={() => {
-                        onChange([...value, suggestion]);
-                        setInputValue("");
-                        setOpen(false);
-                      }}
-                      className="gap-2"
-                    >
-                      <Hash className="h-4 w-4" />
-                      {suggestion.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-                <CommandEmpty>No results found.</CommandEmpty>
-              </Command>
-            </PopoverContent>
-          )}
+          <PopoverContent className="p-0" align="start">
+            <Command className="w-full">
+              <CommandGroup heading="Suggestions">
+                {filteredSuggestions.map((suggestion) => (
+                  <CommandItem
+                    key={suggestion.id}
+                    value={suggestion.id}
+                    onSelect={() => {
+                      onChange([...value, suggestion]);
+                      setInputValue("");
+                      setOpen(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <Hash className="h-4 w-4" />
+                    {suggestion.label}
+                  </CommandItem>
+                ))}
+                {filteredSuggestions.length === 0 && (
+                  <CommandEmpty>No suggestions found.</CommandEmpty>
+                )}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
         </Popover>
       </div>
     </div>
