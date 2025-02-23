@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,7 +34,7 @@ interface Task {
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  availableTasks?: Task[]; // Make it optional to maintain backward compatibility
+  availableTasks?: Task[];
 }
 
 export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
@@ -204,14 +203,14 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
                 </div>
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right">Dependencies</Label>
+                <Label className="text-right">Related</Label>
                 <div className="col-span-3">
                   <div className="space-y-2">
                     <Select onValueChange={handleAddDependency}>
                       <SelectTrigger className="w-full border-dashed">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Plus className="h-3.5 w-3.5" />
-                          <span>Add dependency</span>
+                          <span>Add related task</span>
                         </div>
                       </SelectTrigger>
                       <SelectContent>

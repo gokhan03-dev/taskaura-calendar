@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, GripVertical, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,14 @@ export function SubtaskInput({ subtasks, onChange }: SubtaskInputProps) {
 
   const handleRemoveSubtask = (id: string) => {
     onChange(subtasks.filter(subtask => subtask.id !== id));
+  };
+
+  const handleToggleSubtask = (id: string) => {
+    onChange(subtasks.map(subtask => 
+      subtask.id === id 
+        ? { ...subtask, completed: !subtask.completed }
+        : subtask
+    ));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -82,8 +91,19 @@ export function SubtaskInput({ subtasks, onChange }: SubtaskInputProps) {
               <GripVertical className="h-4 w-4" />
               <span className="sr-only">Drag to reorder</span>
             </button>
+
+            <Checkbox
+              checked={subtask.completed}
+              onCheckedChange={() => handleToggleSubtask(subtask.id)}
+              className="h-4 w-4"
+            />
             
-            <span className="text-sm text-neutral-700">{subtask.title}</span>
+            <span className={cn(
+              "text-sm text-neutral-700",
+              subtask.completed && "line-through text-neutral-400"
+            )}>
+              {subtask.title}
+            </span>
             
             <Button
               type="button"
