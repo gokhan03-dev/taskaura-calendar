@@ -97,24 +97,6 @@ export function ScheduleDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <DialogTitle>Schedule Meeting</DialogTitle>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleSyncWithOutlook}
-                  className="relative group hover:border-blue-400 transition-colors w-10 h-10"
-                  disabled={isSyncing}
-                  title="Sync with Outlook"
-                >
-                  {isSyncing ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <CloudUpload className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
-                  )}
-                  {!user && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-                  )}
-                </Button>
               </div>
               <DialogDescription>
                 Set up a new meeting with your team.
@@ -146,7 +128,25 @@ export function ScheduleDialog({ open, onOpenChange }: { open: boolean; onOpenCh
               setNewAttendeeEmail={setNewAttendeeEmail}
             />
 
-            <DialogFooter>
+            <DialogFooter className="flex sm:justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleSyncWithOutlook}
+                className="relative group hover:border-blue-400 transition-colors w-10 h-10"
+                disabled={isSyncing}
+                title="Sync with Outlook"
+              >
+                {isSyncing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CloudUpload className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
+                )}
+                {!user && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </Button>
               <Button 
                 type="submit"
                 disabled={isSyncing}
