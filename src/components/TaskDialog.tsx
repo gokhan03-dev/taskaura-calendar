@@ -192,48 +192,50 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right">Dependencies</Label>
-                <div className="col-span-3 space-y-2">
-                  <Select onValueChange={handleAddDependency}>
-                    <SelectTrigger className="w-full border-dashed">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add dependency</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {remainingTasks.map(task => (
-                          <SelectItem key={task.id} value={task.id}>
-                            <div className="flex items-center gap-2">
-                              <Link2 className="h-3.5 w-3.5 text-neutral-400" />
-                              {task.title}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="space-y-1.5">
-                    {dependencies.map(dep => (
-                      <div
-                        key={dep.id}
-                        className="group relative flex items-center gap-2 py-1.5 px-2.5 pr-8 rounded-md bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition-colors"
-                      >
-                        <Link2 className="h-3.5 w-3.5 text-neutral-400" />
-                        <span className="text-sm font-medium text-neutral-700">{dep.title}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveDependency(dep.id)}
-                          className="absolute right-1.5 opacity-0 group-hover:opacity-100 h-5 w-5 p-0 hover:bg-neutral-200"
+                <div className="col-span-3">
+                  <div className="space-y-2">
+                    <Select onValueChange={handleAddDependency}>
+                      <SelectTrigger className="w-full border-dashed">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add dependency</span>
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {remainingTasks.map(task => (
+                            <SelectItem key={task.id} value={task.id}>
+                              <div className="flex items-center gap-2">
+                                <Link2 className="h-3.5 w-3.5 text-neutral-400" />
+                                {task.title}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="space-y-1.5">
+                      {dependencies.map(dep => (
+                        <div
+                          key={dep.id}
+                          className="group relative flex items-center gap-2 py-1.5 px-2.5 pr-8 rounded-md bg-neutral-50 border border-neutral-200 hover:border-neutral-300 transition-colors"
                         >
-                          <X className="h-3 w-3" />
-                          <span className="sr-only">Remove dependency</span>
-                        </Button>
-                      </div>
-                    ))}
+                          <Link2 className="h-3.5 w-3.5 text-neutral-400" />
+                          <span className="text-sm font-medium text-neutral-700">{dep.title}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveDependency(dep.id)}
+                            className="absolute right-1.5 opacity-0 group-hover:opacity-100 h-5 w-5 p-0 hover:bg-neutral-200"
+                          >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">Remove dependency</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
