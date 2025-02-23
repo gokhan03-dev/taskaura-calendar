@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { 
   Select,
@@ -19,9 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
-import { RepeatIcon } from "lucide-react";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
-import { Bell } from "lucide-react";
+import { CategoryModal, type Category } from "./CategoryModal";
+import { Bell, Plus, RepeatIcon, Settings2 } from "lucide-react";
 
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
@@ -32,6 +34,11 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
+  const [showCategories, setShowCategories] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: "work", name: "Work", color: "#0EA5E9" },
+    { id: "personal", name: "Personal", color: "#8B5CF6" },
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,32 +77,52 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="description" className="text-right pt-2.5">
                   Description
                 </Label>
-                <Input
+                <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="col-span-3"
+                  className="col-span-3 min-h-[100px]"
+                  placeholder="Task description..."
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="category" className="text-right">
                   Category
                 </Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="work">Work</SelectItem>
-                      <SelectItem value="personal">Personal</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <div className="col-span-3 flex gap-2">
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              {cat.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowCategories(true)}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="date" className="text-right">
@@ -155,6 +182,13 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
         onOpenChange={setShowReminder}
         onSave={setReminderSettings}
         initialSettings={reminderSettings}
+      />
+
+      <CategoryModal
+        open={showCategories}
+        onOpenChange={setShowCategories}
+        categories={categories}
+        onSave={setCategories}
       />
     </>
   );
