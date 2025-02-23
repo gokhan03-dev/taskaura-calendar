@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -33,6 +34,8 @@ const Index = () => {
   const { meetings, isLoading: meetingsLoading, deleteMeeting, subscribeToMeetings } = useMeetings();
 
   useEffect(() => {
+    console.log("Tasks:", tasks);
+    console.log("Meetings:", meetings);
     const unsubscribeTasks = subscribeToTasks();
     const unsubscribeMeetings = subscribeToMeetings();
 
@@ -78,7 +81,19 @@ const Index = () => {
   );
 
   if (tasksLoading || meetingsLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-neutral-50">
+        <Sidebar />
+        <div className="ml-64">
+          <Header />
+          <main className="p-6">
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+              <div className="text-lg text-neutral-600">Loading...</div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   return (
