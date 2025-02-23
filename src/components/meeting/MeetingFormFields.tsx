@@ -1,8 +1,9 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, RepeatIcon, Video, PersonStanding, Link2, UserCheck, UserX, Mail, Help } from "lucide-react";
+import { Bell, RepeatIcon, Video, PersonStanding, Link2, UserCheck, UserX, Mail } from "lucide-react";
 import { type RecurrencePattern } from "../RecurrenceModal";
 import { type ReminderSettings } from "../ReminderModal";
 import {
@@ -93,7 +94,7 @@ export function MeetingFormFields({
       case "declined":
         return <UserX className="h-4 w-4 text-red-500" />;
       case "tentative":
-        return <Help className="h-4 w-4 text-yellow-500" />;
+        return <Mail className="h-4 w-4 text-yellow-500" />; // Changed from Help to Mail for tentative
       default:
         return <Mail className="h-4 w-4 text-gray-500" />;
     }
