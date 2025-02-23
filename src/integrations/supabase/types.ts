@@ -202,7 +202,15 @@ export type Database = {
           until_date?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_recurrence_pattern_meeting"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subtasks: {
         Row: {

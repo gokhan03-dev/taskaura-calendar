@@ -23,11 +23,15 @@ export const useMeetings = () => {
         .select(`
           *,
           meeting_attendees(*),
-          recurrence_patterns(*)
+          recurrence_patterns!recurrence_pattern_meeting(*)
         `)
+        .eq('user_id', user?.id)
         .order('start_time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching meetings:', error);
+        throw error;
+      }
       return data as Meeting[];
     },
     enabled: !!user,
