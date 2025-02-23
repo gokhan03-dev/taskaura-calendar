@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { RepeatIcon } from "lucide-react";
+import { ReminderModal, type ReminderSettings } from "./ReminderModal";
+import { Bell } from "lucide-react";
 
 export function MeetingDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
@@ -20,6 +22,8 @@ export function MeetingDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   const [attendees, setAttendees] = useState("");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
+  const [showReminder, setShowReminder] = useState(false);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +33,7 @@ export function MeetingDialog({ open, onOpenChange }: { open: boolean; onOpenCha
       time,
       attendees,
       recurrencePattern,
+      reminderSettings,
     });
     onOpenChange(false);
   };
@@ -82,6 +87,18 @@ export function MeetingDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
                     )}
                   </Button>
+                  <Button
+                    type="button"
+                    variant={reminderSettings ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setShowReminder(true)}
+                    className="relative"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {reminderSettings && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
+                    )}
+                  </Button>
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -122,6 +139,13 @@ export function MeetingDialog({ open, onOpenChange }: { open: boolean; onOpenCha
         onOpenChange={setShowRecurrence}
         onSave={setRecurrencePattern}
         initialPattern={recurrencePattern}
+      />
+
+      <ReminderModal
+        open={showReminder}
+        onOpenChange={setShowReminder}
+        onSave={setReminderSettings}
+        initialSettings={reminderSettings}
       />
     </>
   );

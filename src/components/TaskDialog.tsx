@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { RepeatIcon } from "lucide-react";
+import { ReminderModal, type ReminderSettings } from "./ReminderModal";
+import { Bell } from "lucide-react";
 
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
@@ -28,6 +30,8 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
   const [date, setDate] = useState("");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
+  const [showReminder, setShowReminder] = useState(false);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +41,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       category,
       date,
       recurrencePattern,
+      reminderSettings,
     });
     onOpenChange(false);
   };
@@ -116,6 +121,18 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
                     )}
                   </Button>
+                  <Button
+                    type="button"
+                    variant={reminderSettings ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setShowReminder(true)}
+                    className="relative"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {reminderSettings && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -131,6 +148,13 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
         onOpenChange={setShowRecurrence}
         onSave={setRecurrencePattern}
         initialPattern={recurrencePattern}
+      />
+
+      <ReminderModal
+        open={showReminder}
+        onOpenChange={setShowReminder}
+        onSave={setReminderSettings}
+        initialSettings={reminderSettings}
       />
     </>
   );
