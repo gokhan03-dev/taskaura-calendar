@@ -32,7 +32,13 @@ interface Task {
   title: string;
 }
 
-export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+interface TaskDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  availableTasks?: Task[]; // Make it optional to maintain backward compatibility
+}
+
+export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("work");
