@@ -22,7 +22,7 @@ import {
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
-import { Bell, Plus, RepeatIcon, Settings2, Link2, ArrowDownToLine } from "lucide-react";
+import { Bell, Plus, RepeatIcon, Settings2, Link2, X } from "lucide-react";
 import { TagInput, TagType } from "./TagInput";
 
 interface Task {
@@ -222,7 +222,7 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                           className="h-6 px-2 hover:bg-neutral-200"
                           onClick={() => handleRemoveDependency(dep.id)}
                         >
-                          <ArrowDownToLine className="h-3 w-3" />
+                          <X className="h-3 w-3" />
                           <span className="sr-only">Remove dependency</span>
                         </Button>
                       </div>
