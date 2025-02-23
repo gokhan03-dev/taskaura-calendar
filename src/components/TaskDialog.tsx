@@ -22,8 +22,13 @@ import {
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
-import { Bell, Plus, RepeatIcon, Settings2 } from "lucide-react";
+import { Bell, Plus, RepeatIcon, Settings2, Link2, ArrowDownToLine } from "lucide-react";
 import { TagInput, TagType } from "./TagInput";
+
+interface Task {
+  id: string;
+  title: string;
+}
 
 export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [title, setTitle] = useState("");
@@ -40,13 +45,12 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
     { id: "personal", name: "Personal", color: "#8B5CF6" },
   ]);
   const [tags, setTags] = useState<TagType[]>([]);
-  
-  const tagSuggestions: TagType[] = [
-    { id: "1", label: "Important" },
-    { id: "2", label: "Urgent" },
-    { id: "3", label: "Personal" },
-    { id: "4", label: "Work" },
-    { id: "5", label: "Study" },
+  const [dependencies, setDependencies] = useState<Task[]>([]);
+
+  const availableTasks: Task[] = [
+    { id: "1", title: "Setup Project" },
+    { id: "2", title: "Design UI" },
+    { id: "3", title: "Implement Backend" },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -59,8 +63,20 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       recurrencePattern,
       reminderSettings,
       tags,
+      dependencies,
     });
     onOpenChange(false);
+  };
+
+  const handleAddDependency = (taskId: string) => {
+    const taskToAdd = availableTasks.find(task => task.id === taskId);
+    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
+      setDependencies([...dependencies, taskToAdd]);
+    }
+  };
+
+  const handleRemoveDependency = (taskId: string) => {
+    setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
 
   return (
@@ -172,6 +188,48 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                   </Button>
                 </div>
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Dependencies</Label>
+                <div className="col-span-3">
+                  <Select onValueChange={handleAddDependency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Add dependency..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {availableTasks
+                          .filter(task => !dependencies.some(dep => dep.id === task.id))
+                          .map(task => (
+                            <SelectItem key={task.id} value={task.id}>
+                              {task.title}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <div className="mt-2 space-y-2">
+                    {dependencies.map(dep => (
+                      <div
+                        key={dep.id}
+                        className="flex items-center gap-2 p-2 rounded-md bg-neutral-50 border border-neutral-100 animate-fade-in"
+                      >
+                        <Link2 className="h-4 w-4 text-neutral-400" />
+                        <span className="flex-1 text-sm">{dep.title}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 hover:bg-neutral-200"
+                          onClick={() => handleRemoveDependency(dep.id)}
+                        >
+                          <ArrowDownToLine className="h-3 w-3" />
+                          <span className="sr-only">Remove dependency</span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2.5">
                   Tags
@@ -180,7 +238,6 @@ export function TaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                   <TagInput
                     value={tags}
                     onChange={setTags}
-                    suggestions={tagSuggestions}
                     maxTags={5}
                   />
                 </div>
