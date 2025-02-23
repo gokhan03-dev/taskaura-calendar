@@ -12,7 +12,7 @@ import { useState } from "react";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { MeetingFormFields } from "./meeting/MeetingFormFields";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { Loader2, CloudSync } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthProvider";
 
@@ -100,17 +100,17 @@ export function ScheduleDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={handleSyncWithOutlook}
-                  className="relative group hover:border-blue-400 transition-colors"
+                  className="relative group hover:border-blue-400 transition-colors w-10 h-10"
                   disabled={isSyncing}
+                  title="Sync with Outlook"
                 >
                   {isSyncing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <CalendarDays className="h-4 w-4 group-hover:text-blue-500 transition-colors" />
+                    <CloudSync className="h-5 w-5 group-hover:text-blue-500 transition-colors" />
                   )}
-                  <span className="ml-2">Sync with Outlook</span>
                   {!user && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
                   )}
