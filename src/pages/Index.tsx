@@ -66,7 +66,7 @@ const Index = () => {
         { email: "john@example.com", rsvp: "accepted" },
         { email: "jane@example.com", rsvp: "pending" }
       ],
-      meetingType: "online",
+      meetingType: "online" as const,
       location: "Google Meet"
     }
   ];
@@ -174,12 +174,10 @@ const Index = () => {
           <TaskDialog 
             open={taskDialogOpen} 
             onOpenChange={setTaskDialogOpen}
-            taskId={selectedTaskId}
           />
           <ScheduleDialog 
             open={scheduleDialogOpen} 
             onOpenChange={setScheduleDialogOpen}
-            meetingId={selectedMeetingId}
           />
         </main>
       </div>
