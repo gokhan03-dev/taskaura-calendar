@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -23,7 +22,7 @@ export const useMeetings = () => {
         .select(`
           *,
           meeting_attendees(*),
-          recurrence_patterns!recurrence_pattern_meeting(*)
+          recurrence_patterns(*)
         `)
         .eq('user_id', user?.id)
         .order('start_time', { ascending: true });
