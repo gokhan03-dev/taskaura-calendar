@@ -28,7 +28,7 @@ interface DBTask {
     title: string;
     completed: boolean;
   }>;
-  task_tags?: Array<{
+  task_tags: Array<{
     tags: {
       id: string;
       name: string;
@@ -55,14 +55,14 @@ export const useTasks = () => {
         .from('tasks')
         .select(`
           *,
-          categories!inner (*),
+          categories (*),
           subtasks (
             id,
             title,
             completed
           ),
-          task_tags!left (
-            tags!inner (
+          task_tags (
+            tags (
               id,
               name
             )
@@ -85,6 +85,7 @@ export const useTasks = () => {
         })) || []
       }));
 
+      console.log('Transformed tasks data:', transformedData);
       return transformedData as Task[];
     },
     enabled: !!user,
@@ -97,17 +98,16 @@ export const useTasks = () => {
       
       console.log('Creating task with data:', newTask);
 
-      const taskWithUserId = {
-        ...newTask,
-        user_id: user.id,
-        status: 'pending' as const,
-        priority: newTask.priority || 'medium',
-      };
-
+      // First create the task
       const { data: createdTask, error: taskError } = await supabase
         .from('tasks')
-        .insert(taskWithUserId)
-        .select('*')
+        .insert({
+          ...newTask,
+          user_id: user.id,
+          status: 'pending',
+          priority: newTask.priority || 'medium',
+        })
+        .select()
         .single();
 
       if (taskError) throw taskError;
@@ -139,7 +139,10 @@ export const useTasks = () => {
           // Then create the task-tag relationship
           const { error: relationError } = await supabase
             .from('task_tags')
-            .insert({ task_id: createdTask.id, tag_id: tagId });
+            .insert({ 
+              task_id: createdTask.id, 
+              tag_id: tagId 
+            });
 
           if (relationError) throw relationError;
           console.log('Created task-tag relationship:', { task_id: createdTask.id, tag_id: tagId });
@@ -153,8 +156,8 @@ export const useTasks = () => {
           *,
           categories (*),
           subtasks (*),
-          task_tags!left (
-            tags!inner (
+          task_tags (
+            tags (
               id,
               name
             )
@@ -175,7 +178,6 @@ export const useTasks = () => {
       };
 
       console.log('Final transformed task:', transformedTask);
-
       return transformedTask as Task;
     },
     onSuccess: () => {
@@ -210,6 +212,7 @@ export const useTasks = () => {
         throw new Error('Unauthorized to update this task');
       }
 
+      // Update the task
       const { data, error } = await supabase
         .from('tasks')
         .update({
@@ -225,7 +228,10 @@ export const useTasks = () => {
           categories (*),
           subtasks (*),
           task_tags (
-            tags (*)
+            tags (
+              id,
+              name
+            )
           )
         `)
         .single();
