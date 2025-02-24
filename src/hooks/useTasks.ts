@@ -29,6 +29,7 @@ interface DBTask {
     completed: boolean;
   }>;
   task_tags: Array<{
+    tag_id: string;
     tags: {
       id: string;
       name: string;
@@ -50,6 +51,7 @@ export const useTasks = () => {
     queryFn: async () => {
       if (!user) throw new Error('User must be authenticated to fetch tasks');
 
+      // Using the same pattern as categories for consistency
       const { data, error } = await supabase
         .from('tasks')
         .select(`
@@ -57,7 +59,11 @@ export const useTasks = () => {
           categories (*),
           subtasks (*),
           task_tags (
-            tags (*)
+            tag_id,
+            tags (
+              id,
+              name
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -89,11 +95,13 @@ export const useTasks = () => {
       
       console.log('Creating task with data:', newTask);
 
-      // Create tags first if needed
-      const tagIds = [];
-      if (newTask.tags && newTask.tags.length > 0) {
+      // First, ensure all tags exist and get their IDs
+      const taskTags = [];
+      if (newTask.tags?.length) {
         for (const tag of newTask.tags) {
-          if (!tag.id) {
+          if (tag.id) {
+            taskTags.push({ id: tag.id });
+          } else {
             // Create new tag
             const { data: newTag, error: tagError } = await supabase
               .from('tags')
@@ -101,13 +109,11 @@ export const useTasks = () => {
                 name: tag.label,
                 user_id: user.id
               })
-              .select()
+              .select('id')
               .single();
 
             if (tagError) throw tagError;
-            tagIds.push(newTag.id);
-          } else {
-            tagIds.push(tag.id);
+            taskTags.push({ id: newTag.id });
           }
         }
       }
@@ -129,21 +135,21 @@ export const useTasks = () => {
 
       if (taskError) throw taskError;
 
-      // Create task-tag relationships
-      if (tagIds.length > 0) {
-        const taskTagsToInsert = tagIds.map(tagId => ({
-          task_id: task.id,
-          tag_id: tagId
-        }));
-
-        const { error: tagRelationError } = await supabase
+      // Create task-tag relationships if there are any tags
+      if (taskTags.length > 0) {
+        const { error: tagLinkError } = await supabase
           .from('task_tags')
-          .insert(taskTagsToInsert);
+          .insert(
+            taskTags.map(tag => ({
+              task_id: task.id,
+              tag_id: tag.id
+            }))
+          );
 
-        if (tagRelationError) throw tagRelationError;
+        if (tagLinkError) throw tagLinkError;
       }
 
-      // Fetch final task with all relations
+      // Fetch the complete task
       const { data: finalTask, error: fetchError } = await supabase
         .from('tasks')
         .select(`
@@ -151,7 +157,11 @@ export const useTasks = () => {
           categories (*),
           subtasks (*),
           task_tags (
-            tags (*)
+            tag_id,
+            tags (
+              id,
+              name
+            )
           )
         `)
         .eq('id', task.id)
@@ -160,15 +170,13 @@ export const useTasks = () => {
       if (fetchError) throw fetchError;
 
       // Transform to match Task type
-      const transformedTask = {
+      return {
         ...finalTask,
         tags: finalTask.task_tags?.map(tt => ({
           id: tt.tags.id,
           label: tt.tags.name
         })) || []
-      };
-
-      return transformedTask as Task;
+      } as Task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -202,44 +210,46 @@ export const useTasks = () => {
         throw new Error('Unauthorized to update this task');
       }
 
-      // Handle tags if present
+      // Handle tags first if they're being updated
       if (updates.tags) {
-        // Delete existing task-tag relationships
+        // Remove existing tag links
         await supabase
           .from('task_tags')
           .delete()
           .eq('task_id', id);
 
-        // Create new tags if needed and get all tag IDs
-        const tagIds = [];
+        // Add new tag links
+        const taskTags = [];
         for (const tag of updates.tags) {
-          if (!tag.id) {
+          if (tag.id) {
+            taskTags.push({ id: tag.id });
+          } else {
+            // Create new tag
             const { data: newTag, error: tagError } = await supabase
               .from('tags')
               .insert({
                 name: tag.label,
                 user_id: user.id
               })
-              .select()
+              .select('id')
               .single();
 
             if (tagError) throw tagError;
-            tagIds.push(newTag.id);
-          } else {
-            tagIds.push(tag.id);
+            taskTags.push({ id: newTag.id });
           }
         }
 
-        // Create new task-tag relationships
-        if (tagIds.length > 0) {
-          const { error: tagRelationError } = await supabase
+        if (taskTags.length > 0) {
+          const { error: tagLinkError } = await supabase
             .from('task_tags')
-            .insert(tagIds.map(tagId => ({
-              task_id: id,
-              tag_id: tagId
-            })));
+            .insert(
+              taskTags.map(tag => ({
+                task_id: id,
+                tag_id: tag.id
+              }))
+            );
 
-          if (tagRelationError) throw tagRelationError;
+          if (tagLinkError) throw tagLinkError;
         }
       }
 
@@ -262,7 +272,11 @@ export const useTasks = () => {
           categories (*),
           subtasks (*),
           task_tags (
-            tags (*)
+            tag_id,
+            tags (
+              id,
+              name
+            )
           )
         `)
         .single();
