@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -20,41 +21,56 @@ const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: stri
   </div>
 );
 
+type TaskPriority = "high" | "medium" | "low";
+
+interface MockTask {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  category: string;
+  completed: boolean;
+  priority: TaskPriority;
+  tags?: { id: string; label: string }[];
+  subtasks?: { id: string; title: string; completed: boolean }[];
+  recurrencePattern?: { frequency: string; interval: number };
+}
+
+const mockTasks: MockTask[] = [
+  {
+    id: "1",
+    title: "House Works",
+    description: "Do the house works properly.",
+    date: "2024-02-11",
+    category: "Personal",
+    completed: false,
+    priority: "high" as TaskPriority,
+    tags: [{ id: "1", label: "Home" }],
+    subtasks: [
+      { id: "1", title: "Clean kitchen", completed: true },
+      { id: "2", title: "Vacuum living room", completed: false }
+    ],
+    recurrencePattern: { frequency: "weekly", interval: 1 }
+  },
+  {
+    id: "2",
+    title: "Meeting with Mike",
+    description: "About the new website",
+    date: "2024-02-22",
+    category: "Work",
+    completed: false,
+    priority: "medium" as TaskPriority,
+    tags: [{ id: "2", label: "Website" }],
+    subtasks: []
+  }
+];
+
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-
-  const mockTasks = [
-    {
-      id: "1",
-      title: "House Works",
-      description: "Do the house works properly.",
-      date: "2024-02-11",
-      category: "Personal",
-      completed: false,
-      priority: "high",
-      tags: [{ id: "1", label: "Home" }],
-      subtasks: [
-        { id: "1", title: "Clean kitchen", completed: true },
-        { id: "2", title: "Vacuum living room", completed: false }
-      ],
-      recurrencePattern: { frequency: "weekly", interval: 1 }
-    },
-    {
-      id: "2",
-      title: "Meeting with Mike",
-      description: "About the new website",
-      date: "2024-02-22",
-      category: "Work",
-      completed: false,
-      priority: "medium",
-      tags: [{ id: "2", label: "Website" }],
-      subtasks: []
-    }
-  ];
 
   const mockMeetings = [
     {
