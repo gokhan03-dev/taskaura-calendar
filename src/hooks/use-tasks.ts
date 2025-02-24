@@ -36,6 +36,9 @@ export function useTasks() {
   const { data: tasks, isLoading, error } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error("No user session found");
+
       const { data, error } = await supabase
         .from('tasks')
         .select(`
@@ -68,6 +71,9 @@ export function useTasks() {
   // Create task mutation
   const createTask = useMutation({
     mutationFn: async (input: CreateTaskInput) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) throw new Error("No user session found");
+
       // Start a Supabase transaction
       const { data: task, error: taskError } = await supabase
         .from('tasks')
@@ -77,7 +83,8 @@ export function useTasks() {
           due_date: input.due_date,
           category_id: input.category_id,
           priority: input.priority || 'medium',
-          status: 'pending'
+          status: 'pending',
+          user_id: session.session.user.id
         })
         .select()
         .single();

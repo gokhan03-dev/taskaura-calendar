@@ -28,8 +28,10 @@ interface MockTask {
   title: string;
   description: string;
   date: string;
+  due_date: string;
   category: string;
   completed: boolean;
+  completed_at: string | null;
   priority: TaskPriority;
   tags?: { id: string; label: string }[];
   subtasks?: { id: string; title: string; completed: boolean }[];
@@ -42,9 +44,11 @@ const mockTasks: MockTask[] = [
     title: "House Works",
     description: "Do the house works properly.",
     date: "2024-02-11",
+    due_date: "2024-02-11",
     category: "Personal",
     completed: false,
-    priority: "high" as TaskPriority,
+    completed_at: null,
+    priority: "high",
     tags: [{ id: "1", label: "Home" }],
     subtasks: [
       { id: "1", title: "Clean kitchen", completed: true },
@@ -57,9 +61,11 @@ const mockTasks: MockTask[] = [
     title: "Meeting with Mike",
     description: "About the new website",
     date: "2024-02-22",
+    due_date: "2024-02-22",
     category: "Work",
     completed: false,
-    priority: "medium" as TaskPriority,
+    completed_at: null,
+    priority: "medium",
     tags: [{ id: "2", label: "Website" }],
     subtasks: []
   }
@@ -144,7 +150,11 @@ const Index = () => {
                   .map(task => (
                     <TaskCard
                       key={task.id}
-                      task={task}
+                      task={{
+                        ...task,
+                        due_date: task.due_date,
+                        completed_at: task.completed_at
+                      }}
                       onEdit={() => {
                         setSelectedTaskId(task.id);
                         setTaskDialogOpen(true);
@@ -177,7 +187,11 @@ const Index = () => {
                   .map(task => (
                     <TaskCard
                       key={task.id}
-                      task={task}
+                      task={{
+                        ...task,
+                        due_date: task.due_date,
+                        completed_at: task.completed_at
+                      }}
                       onEdit={() => {
                         setSelectedTaskId(task.id);
                         setTaskDialogOpen(true);
