@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -24,15 +25,34 @@ const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: stri
   </div>
 );
 
+const LoadingState = () => (
+  <div className="min-h-screen bg-neutral-50">
+    <Sidebar />
+    <div className="ml-64">
+      <Header />
+      <main className="p-6">
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <div className="text-lg text-neutral-600">Loading...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+);
+
 const Index = () => {
+  const { tasks, isLoading: tasksLoading, subscribeToTasks } = useTasks();
+  const { meetings, isLoading: meetingsLoading, deleteMeeting, subscribeToMeetings } = useMeetings();
+
+  // Early return for loading state
+  if (tasksLoading || meetingsLoading) {
+    return <LoadingState />;
+  }
+
   const [searchQuery, setSearchQuery] = useState("");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-
-  const { tasks, isLoading: tasksLoading, subscribeToTasks } = useTasks();
-  const { meetings, isLoading: meetingsLoading, deleteMeeting, subscribeToMeetings } = useMeetings();
 
   useEffect(() => {
     console.log("Tasks:", tasks);
@@ -44,7 +64,7 @@ const Index = () => {
       unsubscribeTasks();
       unsubscribeMeetings();
     };
-  }, []);
+  }, [subscribeToTasks, subscribeToMeetings]);
 
   const handleTaskEdit = (task: Task) => {
     setSelectedTask(task);
@@ -90,22 +110,6 @@ const Index = () => {
     (item.type === 'task' && item.status === 'completed') ||
     (item.type === 'meeting' && item.status === 'completed')
   );
-
-  if (tasksLoading || meetingsLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-50">
-        <Sidebar />
-        <div className="ml-64">
-          <Header />
-          <main className="p-6">
-            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-              <div className="text-lg text-neutral-600">Loading...</div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-neutral-50">
