@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Plus, RepeatIcon, Settings2, Link2, X } from "lucide-react";
+import { Bell, Plus, RepeatIcon, Settings2, Link2, X, Flag } from "lucide-react";
 import { TagInput, TagType } from "../TagInput";
 import { SubtaskInput, type Subtask } from "../SubtaskInput";
 import { Category } from "../CategoryModal";
@@ -33,6 +33,8 @@ interface TaskFormFieldsProps {
   setCategory: (category: string) => void;
   date: string;
   setDate: (date: string) => void;
+  priority: "high" | "medium" | "low";
+  setPriority: (priority: "high" | "medium" | "low") => void;
   categories: Category[];
   setShowCategories: (show: boolean) => void;
   recurrencePattern?: RecurrencePattern;
@@ -49,6 +51,12 @@ interface TaskFormFieldsProps {
   setSubtasks: (subtasks: Subtask[]) => void;
 }
 
+const priorityColors = {
+  high: "#F97316",
+  medium: "#FEC6A1",
+  low: "#8E9196"
+} as const;
+
 export function TaskFormFields({
   title,
   setTitle,
@@ -58,6 +66,8 @@ export function TaskFormFields({
   setCategory,
   date,
   setDate,
+  priority,
+  setPriority,
   categories,
   setShowCategories,
   recurrencePattern,
@@ -98,6 +108,28 @@ export function TaskFormFields({
           className="col-span-3 min-h-[100px]"
           placeholder="Task description..."
         />
+      </div>
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="priority" className="text-right">
+          Priority
+        </Label>
+        <Select value={priority} onValueChange={setPriority}>
+          <SelectTrigger className="col-span-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {Object.entries(priorityColors).map(([level, color]) => (
+                <SelectItem key={level} value={level}>
+                  <div className="flex items-center gap-2">
+                    <Flag className="h-4 w-4" style={{ color }} />
+                    <span className="capitalize">{level}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="category" className="text-right">
@@ -245,3 +277,4 @@ export function TaskFormFields({
     </div>
   );
 }
+

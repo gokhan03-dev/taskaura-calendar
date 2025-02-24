@@ -32,6 +32,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("work");
   const [date, setDate] = useState("");
+  const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
@@ -63,6 +64,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
       description,
       category,
       date,
+      priority,
       recurrencePattern,
       reminderSettings,
       tags,
@@ -95,6 +97,8 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
               setCategory={setCategory}
               date={date}
               setDate={setDate}
+              priority={priority}
+              setPriority={setPriority}
               categories={categories}
               setShowCategories={setShowCategories}
               recurrencePattern={recurrencePattern}
@@ -141,3 +145,4 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     </>
   );
 }
+
