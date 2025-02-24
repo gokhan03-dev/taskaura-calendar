@@ -109,9 +109,15 @@ export function TaskFormFields({
         setShowRecurrence={setShowRecurrence}
       />
 
-      <TagInput tags={tags} setTags={setTags} />
+      <TagInput 
+        value={tags} 
+        onChange={setTags}
+      />
       
-      <SubtaskInput subtasks={subtasks} setSubtasks={setSubtasks} />
+      <SubtaskInput
+        value={subtasks}
+        onChange={setSubtasks}
+      />
     </div>
   );
 }
