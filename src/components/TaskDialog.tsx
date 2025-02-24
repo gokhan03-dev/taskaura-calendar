@@ -81,13 +81,42 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     e.preventDefault();
     
     try {
+      // First create the tags if they don't exist
+      const tagsToCreate = tags.filter(tag => !tag.id.includes('-')); // Filter out existing tags (which should have UUIDs)
+      const createdTags = [];
+      
+      if (tagsToCreate.length > 0) {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user) throw new Error("No user session found");
+
+        for (const tag of tagsToCreate) {
+          const { data: newTag, error } = await supabase
+            .from('tags')
+            .insert({
+              name: tag.label,
+              user_id: session.session.user.id
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          createdTags.push({ id: newTag.id, label: newTag.name });
+        }
+      }
+
+      // Combine existing tags (with valid UUIDs) and newly created tags
+      const finalTags = [
+        ...tags.filter(tag => tag.id.includes('-')),
+        ...createdTags
+      ];
+
       await createTask.mutateAsync({
         title,
         description,
         due_date: date,
-        category_id: category, // Now using the actual UUID from the database
+        category_id: category,
         priority,
-        tags,
+        tags: finalTags,
         subtasks,
         dependencies: dependencies.map(dep => dep.id),
       });
@@ -183,7 +212,6 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
         onOpenChange={setShowCategories}
         categories={categories}
         onSave={() => {
-          // We'll just refresh the categories query instead of managing state here
           queryClient.invalidateQueries({ queryKey: ['categories'] });
         }}
       />
