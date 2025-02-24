@@ -48,7 +48,10 @@ export const useTasks = () => {
       // Transform the data to match the Task type
       const transformedData = data?.map(task => ({
         ...task,
-        tags: task.task_tags?.map(tt => tt.tags) || []
+        tags: task.task_tags?.map(tt => ({
+          id: tt.tags.id,
+          label: tt.tags.name // Transform 'name' to 'label'
+        })) || []
       }));
 
       return transformedData as Task[];
@@ -61,7 +64,7 @@ export const useTasks = () => {
     mutationFn: async (newTask: CreateTaskInput) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
-      console.log('Creating task with data:', newTask); // Debug log
+      console.log('Creating task with data:', newTask);
 
       const taskWithUserId = {
         ...newTask,
@@ -78,11 +81,11 @@ export const useTasks = () => {
 
       if (taskError) throw taskError;
 
-      console.log('Created task:', createdTask); // Debug log
+      console.log('Created task:', createdTask);
 
       // If there are tags, handle them separately
       if (newTask.tags && newTask.tags.length > 0) {
-        console.log('Processing tags:', newTask.tags); // Debug log
+        console.log('Processing tags:', newTask.tags);
         
         for (const tag of newTask.tags) {
           // First ensure the tag exists
@@ -90,13 +93,16 @@ export const useTasks = () => {
           if (!tagId) {
             const { data: newTag, error: tagError } = await supabase
               .from('tags')
-              .upsert({ name: tag.label, user_id: user.id })
+              .upsert({ 
+                name: tag.label, // Use label as name in the database
+                user_id: user.id 
+              })
               .select()
               .single();
 
             if (tagError) throw tagError;
             tagId = newTag.id;
-            console.log('Created new tag:', newTag); // Debug log
+            console.log('Created new tag:', newTag);
           }
 
           // Then create the task-tag relationship
@@ -105,7 +111,7 @@ export const useTasks = () => {
             .insert({ task_id: createdTask.id, tag_id: tagId });
 
           if (relationError) throw relationError;
-          console.log('Created task-tag relationship:', { task_id: createdTask.id, tag_id: tagId }); // Debug log
+          console.log('Created task-tag relationship:', { task_id: createdTask.id, tag_id: tagId });
         }
       }
 
@@ -127,9 +133,19 @@ export const useTasks = () => {
         .single();
 
       if (fetchError) throw fetchError;
-      console.log('Final task with relationships:', finalTask); // Debug log
 
-      return finalTask;
+      // Transform the final task data to match the Task type
+      const transformedTask = {
+        ...finalTask,
+        tags: finalTask.task_tags?.map(tt => ({
+          id: tt.tags.id,
+          label: tt.tags.name // Transform 'name' to 'label'
+        })) || []
+      };
+
+      console.log('Final transformed task:', transformedTask);
+
+      return transformedTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
