@@ -11,18 +11,13 @@ export interface Task {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
-  categories?: {
-    id: string;
-    name: string;
-    color: string;
-  } | null;
 }
 
 export interface CreateTaskInput {
   title: string;
-  description?: string | null;
-  category_id?: string | null;
-  due_date?: string | null;
+  description?: string;
+  category_id?: string;
+  due_date?: string;
   priority?: 'low' | 'medium' | 'high';
 }
 

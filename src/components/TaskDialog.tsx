@@ -63,15 +63,15 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
           name: cat.name,
           color: cat.color
         })));
-        // Only set default category if none is selected and it's the initial load
-        if (category === null && fetchedCategories.length > 0) {
+        // Set default category if none selected
+        if (!category && fetchedCategories.length > 0) {
           setCategory(fetchedCategories[0].id);
         }
       }
     };
 
     fetchCategories();
-  }, []); // Remove category dependency to avoid circular updates
+  }, [category]);
 
   const handleAddDependency = (taskId: string) => {
     const taskToAdd = availableTasks.find(task => task.id === taskId);
@@ -87,16 +87,12 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const taskData = {
+      await createTask.mutateAsync({
         title,
-        description: description || null,
+        description,
         category_id: category || undefined,
         due_date: date || undefined,
-      };
-
-      console.log('Creating task with data:', taskData); // Debug log
-      
-      await createTask.mutateAsync(taskData);
+      });
       
       // Reset form
       setTitle("");
@@ -184,3 +180,4 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     </>
   );
 }
+
