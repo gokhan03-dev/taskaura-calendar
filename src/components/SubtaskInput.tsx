@@ -13,11 +13,11 @@ export interface Subtask {
 }
 
 interface SubtaskInputProps {
-  value: Subtask[];
+  subtasks: Subtask[];
   onChange: (subtasks: Subtask[]) => void;
 }
 
-export function SubtaskInput({ value, onChange }: SubtaskInputProps) {
+export function SubtaskInput({ subtasks, onChange }: SubtaskInputProps) {
   const [newSubtask, setNewSubtask] = useState("");
 
   const handleAddSubtask = () => {
@@ -29,16 +29,16 @@ export function SubtaskInput({ value, onChange }: SubtaskInputProps) {
       completed: false
     };
     
-    onChange([...value, newSubtaskItem]);
+    onChange([...subtasks, newSubtaskItem]);
     setNewSubtask("");
   };
 
   const handleRemoveSubtask = (id: string) => {
-    onChange(value.filter(subtask => subtask.id !== id));
+    onChange(subtasks.filter(subtask => subtask.id !== id));
   };
 
   const handleToggleSubtask = (id: string) => {
-    onChange(value.map(subtask => 
+    onChange(subtasks.map(subtask => 
       subtask.id === id 
         ? { ...subtask, completed: !subtask.completed }
         : subtask
@@ -74,7 +74,7 @@ export function SubtaskInput({ value, onChange }: SubtaskInputProps) {
       </div>
       
       <div className="space-y-1.5">
-        {value.map((subtask, index) => (
+        {subtasks.map((subtask, index) => (
           <div
             key={subtask.id}
             className={cn(
