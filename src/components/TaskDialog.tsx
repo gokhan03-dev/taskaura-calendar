@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +31,7 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
   const [description, setDescription] = useState(taskToEdit?.description || "");
   const [category, setCategory] = useState<string | null>(taskToEdit?.category_id || null);
   const [date, setDate] = useState(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(taskToEdit?.priority || 'medium');
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
@@ -67,6 +67,7 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
       setDescription(taskToEdit?.description || "");
       setCategory(taskToEdit?.category_id || null);
       setDate(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
+      setPriority(taskToEdit?.priority || 'medium');
     }
   }, [open, taskToEdit]);
 
@@ -80,6 +81,7 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
           description,
           category_id: category,
           due_date: date || undefined,
+          priority,
         });
       } else {
         await createTask.mutateAsync({
@@ -87,6 +89,7 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
           description,
           category_id: category,
           due_date: date || undefined,
+          priority,
         });
       }
       
@@ -117,6 +120,8 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
               setCategory={setCategory}
               date={date}
               setDate={setDate}
+              priority={priority}
+              setPriority={setPriority}
               categories={categories}
               setShowCategories={setShowCategories}
               recurrencePattern={recurrencePattern}

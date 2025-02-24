@@ -3,13 +3,16 @@ import { format } from "date-fns";
 import { 
   Repeat, 
   Tag,
-  Trash2 
+  Trash2,
+  ListTodo
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Task } from "@/lib/types/task";
 import { useTasks } from "@/hooks/useTasks";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 interface TaskCardProps {
   task: Task;
@@ -20,6 +23,40 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
   const { updateTask, deleteTask } = useTasks();
   const { toast } = useToast();
   const isCompleted = task.status === 'completed';
+  const [categoryName, setCategoryName] = useState<string>("");
+  const [subtasks, setSubtasks] = useState<{ total: number; completed: number }>({ total: 0, completed: 0 });
+
+  useEffect(() => {
+    const fetchCategoryName = async () => {
+      if (task.category_id) {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', task.category_id)
+          .single();
+        
+        if (!error && data) {
+          setCategoryName(data.name);
+        }
+      }
+    };
+
+    const fetchSubtasks = async () => {
+      const { data, error } = await supabase
+        .from('subtasks')
+        .select('completed')
+        .eq('task_id', task.id);
+
+      if (!error && data) {
+        const total = data.length;
+        const completed = data.filter(st => st.completed).length;
+        setSubtasks({ total, completed });
+      }
+    };
+
+    fetchCategoryName();
+    fetchSubtasks();
+  }, [task.category_id, task.id]);
 
   const handleToggleCompletion = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,6 +122,12 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {subtasks.total > 0 && (
+                <span className="flex items-center gap-1 text-sm text-neutral-500">
+                  <ListTodo className="h-4 w-4" />
+                  {subtasks.completed}/{subtasks.total}
+                </span>
+              )}
               {task.recurrence_pattern && (
                 <Repeat className="h-4 w-4 text-neutral-400" />
               )}
@@ -114,10 +157,10 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
                 {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
               </span>
             )}
-            {task.category_id && (
+            {categoryName && (
               <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-neutral-100 text-neutral-600">
                 <Tag className="h-3 w-3" />
-                {task.category_id}
+                {categoryName}
               </span>
             )}
           </div>
