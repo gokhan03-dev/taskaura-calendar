@@ -20,18 +20,21 @@ export const useTasks = () => {
     queryFn: async () => {
       if (!user) throw new Error('User must be authenticated to fetch tasks');
 
+      console.log('Fetching tasks for user:', user.id);
+
       const { data, error } = await supabase
         .from('tasks')
         .select(`
           *,
-          categories!inner (*),
+          categories (*),
           subtasks (
             id,
             title,
             completed
           ),
-          task_tags!left (
-            tags!inner (
+          task_tags (
+            tag_id,
+            tags (
               id,
               name
             )
@@ -45,11 +48,28 @@ export const useTasks = () => {
         throw error;
       }
 
+      console.log('Raw tasks data:', data);
+
       // Transform the data to match the Task type
-      const transformedData = data?.map(task => ({
-        ...task,
-        tags: task.task_tags?.map(tt => tt.tags) || []
-      }));
+      const transformedData = data?.map(task => {
+        // Transform task_tags into tags array
+        const tags = task.task_tags
+          ?.map(tt => tt.tags)
+          .filter(tag => tag) // Filter out any null values
+          .map(tag => ({
+            id: tag.id,
+            label: tag.name
+          }));
+
+        console.log(`Transformed tags for task ${task.id}:`, tags);
+
+        return {
+          ...task,
+          tags: tags || []
+        };
+      });
+
+      console.log('Transformed tasks data:', transformedData);
 
       return transformedData as Task[];
     },
