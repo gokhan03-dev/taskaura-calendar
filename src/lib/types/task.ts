@@ -1,4 +1,6 @@
 
+import { RecurrencePattern } from "./meeting";
+
 export interface Task {
   id: string;
   user_id: string;
@@ -11,6 +13,7 @@ export interface Task {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  recurrence_pattern?: RecurrencePattern;
 }
 
 export interface CreateTaskInput {
@@ -22,6 +25,7 @@ export interface CreateTaskInput {
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
+  id: string;
   status?: 'pending' | 'in_progress' | 'completed';
   completed_at?: string | null;
 }

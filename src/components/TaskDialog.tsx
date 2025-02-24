@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
@@ -15,20 +17,16 @@ import { type TagType } from "./TagInput";
 import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
 import { useTasks } from "@/hooks/useTasks";
+import { Task } from "@/lib/types/task";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Task {
-  id: string;
-  title: string;
-}
 
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  availableTasks?: Task[];
+  taskToEdit?: Task;
 }
 
-export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps & { taskToEdit?: Task }) {
+export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) {
   const { createTask, updateTask } = useTasks();
   const [title, setTitle] = useState(taskToEdit?.title || "");
   const [description, setDescription] = useState(taskToEdit?.description || "");
@@ -56,30 +54,12 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps &
       }
 
       if (fetchedCategories) {
-        setCategories(fetchedCategories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          color: cat.color
-        })));
-        if (!category && fetchedCategories.length > 0) {
-          setCategory(fetchedCategories[0].id);
-        }
+        setCategories(fetchedCategories);
       }
     };
 
     fetchCategories();
-  }, [category]);
-
-  const handleAddDependency = (taskId: string) => {
-    const taskToAdd = availableTasks.find(task => task.id === taskId);
-    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
-      setDependencies([...dependencies, taskToAdd]);
-    }
-  };
-
-  const handleRemoveDependency = (taskId: string) => {
-    setDependencies(dependencies.filter(dep => dep.id !== taskId));
-  };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -116,17 +96,15 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps &
     }
   };
 
-  const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Add New Task</DialogTitle>
+              <DialogTitle>{taskToEdit ? 'Edit Task' : 'Add New Task'}</DialogTitle>
               <DialogDescription>
-                Create a new task to add to your list.
+                {taskToEdit ? 'Edit your task details.' : 'Create a new task to add to your list.'}
               </DialogDescription>
             </DialogHeader>
             
@@ -148,15 +126,22 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps &
               tags={tags}
               setTags={setTags}
               dependencies={dependencies}
-              handleAddDependency={handleAddDependency}
-              handleRemoveDependency={handleRemoveDependency}
-              remainingTasks={remainingTasks}
+              handleAddDependency={(taskId: string) => {
+                const taskToAdd = dependencies.find(dep => dep.id === taskId);
+                if (taskToAdd) {
+                  setDependencies([...dependencies, taskToAdd]);
+                }
+              }}
+              handleRemoveDependency={(taskId: string) => {
+                setDependencies(dependencies.filter(dep => dep.id !== taskId));
+              }}
+              remainingTasks={[]}
               subtasks={subtasks}
               setSubtasks={setSubtasks}
             />
 
             <DialogFooter>
-              <Button type="submit">Add Task</Button>
+              <Button type="submit">{taskToEdit ? 'Save Changes' : 'Add Task'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

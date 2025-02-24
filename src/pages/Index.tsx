@@ -9,6 +9,8 @@ import { TaskCard } from "@/components/TaskCard";
 import { MeetingCard } from "@/components/MeetingCard";
 import { useTasks } from "@/hooks/useTasks";
 import { useMeetings } from "@/hooks/useMeetings";
+import { Task } from "@/lib/types/task";
+import { Meeting } from "@/lib/types/meeting";
 
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
@@ -236,15 +238,15 @@ const Index = () => {
               setTaskDialogOpen(open);
               if (!open) setSelectedTask(null);
             }}
-            taskToEdit={selectedTask}
+            taskToEdit={selectedTask || undefined}
           />
+          
           <ScheduleDialog 
             open={scheduleDialogOpen} 
             onOpenChange={(open) => {
               setScheduleDialogOpen(open);
               if (!open) setSelectedMeeting(null);
             }}
-            meetingToEdit={selectedMeeting}
           />
         </main>
       </div>
