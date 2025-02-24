@@ -33,8 +33,6 @@ interface TaskFormFieldsProps {
   setCategory: (category: string) => void;
   date: string;
   setDate: (date: string) => void;
-  priority: 'low' | 'medium' | 'high';
-  setPriority: (priority: 'low' | 'medium' | 'high') => void;
   categories: Category[];
   setShowCategories: (show: boolean) => void;
   recurrencePattern?: RecurrencePattern;
@@ -60,8 +58,6 @@ export function TaskFormFields({
   setCategory,
   date,
   setDate,
-  priority,
-  setPriority,
   categories,
   setShowCategories,
   recurrencePattern,
@@ -137,21 +133,6 @@ export function TaskFormFields({
             <Settings2 className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="priority" className="text-right">
-          Priority
-        </Label>
-        <Select value={priority} onValueChange={setPriority}>
-          <SelectTrigger className="col-span-3">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="date" className="text-right">

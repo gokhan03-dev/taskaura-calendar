@@ -1,5 +1,5 @@
-
 import * as React from "react"
+
 import type {
   ToastActionElement,
   ToastProps,
@@ -90,6 +90,8 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -166,7 +168,7 @@ function toast({ ...props }: Toast) {
   }
 }
 
-export function useToast() {
+function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -186,4 +188,4 @@ export function useToast() {
   }
 }
 
-export { toast }
+export { useToast, toast }
