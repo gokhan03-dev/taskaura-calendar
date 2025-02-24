@@ -1,9 +1,10 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Task, CreateTaskInput, UpdateTaskInput } from '@/lib/types/task';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 export const useTasks = () => {
   const { user } = useAuth();
@@ -55,47 +56,6 @@ export const useTasks = () => {
     },
     enabled: !!user,
   });
-
-  // Add useEffect to check and update task status based on meeting times
-  useEffect(() => {
-    if (!user || !tasks) return;
-
-    const checkTaskStatus = async () => {
-      const now = new Date();
-      
-      for (const task of tasks) {
-        if (task.due_date) {
-          const dueDate = new Date(task.due_date);
-          
-          // Check if task should move to in_progress
-          if (task.status === 'pending' && dueDate <= now) {
-            await updateTask.mutateAsync({
-              id: task.id,
-              status: 'in_progress'
-            });
-          }
-          
-          // Check if task should move to completed
-          if (task.status === 'in_progress' && 
-              dueDate.getTime() + (2 * 60 * 60 * 1000) <= now.getTime()) { // 2 hours after due time
-            await updateTask.mutateAsync({
-              id: task.id,
-              status: 'completed',
-              completed_at: new Date().toISOString()
-            });
-          }
-        }
-      }
-    };
-
-    // Run the check every minute
-    const interval = setInterval(checkTaskStatus, 60000);
-    
-    // Initial check
-    checkTaskStatus();
-
-    return () => clearInterval(interval);
-  }, [user, tasks]);
 
   // Create task mutation
   const createTask = useMutation({
@@ -221,20 +181,10 @@ export const useTasks = () => {
             : updates.completed_at,
         })
         .eq('id', id)
-        .select(`
-          *,
-          categories (*),
-          subtasks (*),
-          task_tags (
-            tags (*)
-          )
-        `)
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error updating task:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
@@ -284,10 +234,7 @@ export const useTasks = () => {
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting task:', error);
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -307,7 +254,7 @@ export const useTasks = () => {
   });
 
   // Set up real-time subscription
-  const subscribeToTasks = () => {
+  const subscribeToTasks = useCallback(() => {
     if (!user) return () => {};
 
     const channel = supabase
@@ -330,7 +277,45 @@ export const useTasks = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [user, queryClient]);
+
+  // Check and update task status based on meeting times
+  useEffect(() => {
+    if (!user || !tasks) return;
+
+    const checkTaskStatus = async () => {
+      const now = new Date();
+      
+      for (const task of tasks) {
+        if (task.due_date) {
+          const dueDate = new Date(task.due_date);
+          
+          // Check if task should move to in_progress
+          if (task.status === 'pending' && dueDate <= now) {
+            await updateTask.mutateAsync({
+              id: task.id,
+              status: 'in_progress'
+            });
+          }
+          
+          // Check if task should move to completed
+          if (task.status === 'in_progress' && 
+              dueDate.getTime() + (2 * 60 * 60 * 1000) <= now.getTime()) {
+            await updateTask.mutateAsync({
+              id: task.id,
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            });
+          }
+        }
+      }
+    };
+
+    const interval = setInterval(checkTaskStatus, 60000);
+    checkTaskStatus();
+
+    return () => clearInterval(interval);
+  }, [user, tasks, updateTask]);
 
   return {
     tasks,
