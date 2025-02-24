@@ -1,28 +1,26 @@
-
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { 
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarPlus, Bell, Tags, List, Plus } from "lucide-react";
+import { TagInput, type TagType } from "@/components/TagInput";
+import { SubtaskInput, type Subtask } from "@/components/SubtaskInput";
+import { Category } from "@/components/CategoryModal";
+import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Plus, RepeatIcon, Settings2, Link2, X } from "lucide-react";
-import { TagInput, TagType } from "../TagInput";
-import { SubtaskInput, type Subtask } from "../SubtaskInput";
-import { Category } from "../CategoryModal";
-import { type RecurrencePattern } from "../RecurrenceModal";
-import { type ReminderSettings } from "../ReminderModal";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-
-interface Task {
-  id: string;
-  title: string;
-}
 
 interface TaskFormFieldsProps {
   title: string;
@@ -30,21 +28,21 @@ interface TaskFormFieldsProps {
   description: string;
   setDescription: (description: string) => void;
   category: string;
-  setCategory: (category: string) => void;
+  setCategory: (category: string | null) => void;
   date: string;
   setDate: (date: string) => void;
   categories: Category[];
   setShowCategories: (show: boolean) => void;
-  recurrencePattern?: RecurrencePattern;
+  recurrencePattern?: any;
   setShowRecurrence: (show: boolean) => void;
-  reminderSettings?: ReminderSettings;
+  reminderSettings?: any;
   setShowReminder: (show: boolean) => void;
   tags: TagType[];
   setTags: (tags: TagType[]) => void;
-  dependencies: Task[];
+  dependencies: Array<{ id: string; title: string }>;
   handleAddDependency: (taskId: string) => void;
   handleRemoveDependency: (taskId: string) => void;
-  remainingTasks: Task[];
+  remainingTasks: Array<{ id: string; title: string }>;
   subtasks: Subtask[];
   setSubtasks: (subtasks: Subtask[]) => void;
 }
@@ -73,105 +71,93 @@ export function TaskFormFields({
   subtasks,
   setSubtasks,
 }: TaskFormFieldsProps) {
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setDate(format(selectedDate, "yyyy-MM-dd"));
+    }
+  };
+
   return (
     <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="title" className="text-right">
-          Title
-        </Label>
+      <div className="grid gap-2">
+        <Label htmlFor="title">Title</Label>
         <Input
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="col-span-3"
-          required
+          placeholder="Enter task title"
         />
       </div>
-      <div className="grid grid-cols-4 items-start gap-4">
-        <Label htmlFor="description" className="text-right pt-2.5">
-          Description
-        </Label>
+      
+      <div className="grid gap-2">
+        <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="col-span-3 min-h-[100px]"
-          placeholder="Task description..."
+          placeholder="Enter task description"
         />
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="category" className="text-right">
-          Category
-        </Label>
-        <div className="col-span-3 flex gap-2">
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      {cat.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setShowCategories(true)}
-          >
-            <Settings2 className="h-4 w-4" />
-          </Button>
-        </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="category">Category</Label>
+        <Select
+          value={category || undefined}
+          onValueChange={(value) => setCategory(value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  />
+                  {cat.name}
+                </div>
+              </SelectItem>
+            ))}
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => setShowCategories(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          </SelectContent>
+        </Select>
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="date" className="text-right">
-          Due Date
-        </Label>
-        <div className="col-span-3 flex gap-2">
-          <Input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            variant={recurrencePattern ? "default" : "outline"}
-            size="icon"
-            onClick={() => setShowRecurrence(true)}
-            className="relative"
-          >
-            <RepeatIcon className="h-4 w-4" />
-            {recurrencePattern && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant={reminderSettings ? "default" : "outline"}
-            size="icon"
-            onClick={() => setShowReminder(true)}
-            className="relative"
-          >
-            <Bell className="h-4 w-4" />
-            {reminderSettings && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
-            )}
-          </Button>
-        </div>
+
+      <div className="grid gap-2">
+        <Label>Due Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarPlus className="mr-2 h-4 w-4" />
+              {date ? format(new Date(date), "PPP") : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              onSelect={handleDateSelect}
+              selected={date ? new Date(date) : undefined}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+
       <div className="grid grid-cols-4 items-start gap-4">
         <Label htmlFor="tags" className="text-right pt-2.5">
           Tags
