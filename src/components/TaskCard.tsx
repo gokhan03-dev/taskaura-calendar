@@ -5,7 +5,7 @@ import {
   Tag, 
   List, 
   Repeat, 
-  Flag
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,11 +55,12 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
-              <Flag 
+              <Star 
                 className="h-4 w-4" 
                 style={{ 
                   color: priorityColors[task.priority],
-                  fill: task.priority === "medium" ? "#FFB800" : "transparent"
+                  fill: priorityColors[task.priority],
+                  opacity: task.priority === "low" ? 0.5 : 1
                 }}
               />
               <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
