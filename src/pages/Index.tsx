@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -12,26 +11,6 @@ import { useTasks } from "@/hooks/useTasks";
 import { useMeetings } from "@/hooks/useMeetings";
 import { Task } from "@/lib/types/task";
 import { Meeting } from "@/lib/types/meeting";
-
-type TaskStatus = 'completed' | 'pending' | 'in_progress';
-type TaskPriority = 'low' | 'medium' | 'high';
-
-type FilteredTask = Omit<Task, 'status' | 'priority'> & {
-  type: 'task';
-  date: string | null;
-  category: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-};
-
-type FilteredMeeting = Meeting & {
-  type: 'meeting';
-  attendees: any[];
-  location: string;
-  description: string;
-};
-
-type FilteredItem = FilteredTask | FilteredMeeting;
 
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
@@ -77,46 +56,28 @@ const Index = () => {
     setScheduleDialogOpen(true);
   };
 
-  const validateTaskStatus = (status: string): TaskStatus => {
-    if (status === 'completed' || status === 'pending' || status === 'in_progress') {
-      return status;
-    }
-    return 'pending'; // Default fallback
-  };
-
-  const validateTaskPriority = (priority: string): TaskPriority => {
-    if (priority === 'low' || priority === 'medium' || priority === 'high') {
-      return priority;
-    }
-    return 'medium'; // Default fallback
-  };
-
-  const filteredItems: FilteredItem[] = [
-    ...(tasks || []).map((task): FilteredTask => {
-      const validatedTask: FilteredTask = {
-        ...task,
-        type: 'task',
-        date: task.due_date,
-        category: task.category_id || 'Uncategorized',
-        status: validateTaskStatus(task.status),
-        priority: validateTaskPriority(task.priority)
-      };
-      return validatedTask;
-    }),
-    ...(meetings || []).map((meeting): FilteredMeeting => ({
-      ...meeting,
-      type: 'meeting',
+  const filteredItems = [
+    ...(tasks || []).map(task => ({ 
+      ...task, 
+      type: 'task' as const,
+      completed: task.status === 'completed',
+      date: task.due_date,
+      category: task.category_id || 'Uncategorized',
+    })),
+    ...(meetings || []).map(meeting => ({ 
+      ...meeting, 
+      type: 'meeting' as const,
       attendees: meeting.attendees || [],
       location: meeting.location || '',
       description: meeting.description || '',
     })),
-  ].filter(item =>
+  ].filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pendingItems = filteredItems.filter(item => 
-    (item.type === 'task' && item.status === 'pending') ||
+    (item.type === 'task' && item.status !== 'completed') ||
     (item.type === 'meeting' && item.status === 'scheduled')
   );
 
