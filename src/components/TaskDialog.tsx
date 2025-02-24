@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,12 +28,12 @@ interface TaskDialogProps {
   availableTasks?: Task[];
 }
 
-export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
-  const { createTask } = useTasks();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
-  const [date, setDate] = useState("");
+export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps & { taskToEdit?: Task }) {
+  const { createTask, updateTask } = useTasks();
+  const [title, setTitle] = useState(taskToEdit?.title || "");
+  const [description, setDescription] = useState(taskToEdit?.description || "");
+  const [category, setCategory] = useState<string | null>(taskToEdit?.category_id || null);
+  const [date, setDate] = useState(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
@@ -45,7 +44,6 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const [dependencies, setDependencies] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
-  // Fetch categories when component mounts
   useEffect(() => {
     const fetchCategories = async () => {
       const { data: fetchedCategories, error } = await supabase
@@ -63,7 +61,6 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
           name: cat.name,
           color: cat.color
         })));
-        // Set default category if none selected
         if (!category && fetchedCategories.length > 0) {
           setCategory(fetchedCategories[0].id);
         }
@@ -84,30 +81,38 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
 
+  useEffect(() => {
+    if (open) {
+      setTitle(taskToEdit?.title || "");
+      setDescription(taskToEdit?.description || "");
+      setCategory(taskToEdit?.category_id || null);
+      setDate(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
+    }
+  }, [open, taskToEdit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createTask.mutateAsync({
-        title,
-        description,
-        category_id: category || undefined,
-        due_date: date || undefined,
-      });
-      
-      // Reset form
-      setTitle("");
-      setDescription("");
-      setCategory(null);
-      setDate("");
-      setRecurrencePattern(undefined);
-      setReminderSettings(undefined);
-      setTags([]);
-      setDependencies([]);
-      setSubtasks([]);
+      if (taskToEdit) {
+        await updateTask.mutateAsync({
+          id: taskToEdit.id,
+          title,
+          description,
+          category_id: category,
+          due_date: date || undefined,
+        });
+      } else {
+        await createTask.mutateAsync({
+          title,
+          description,
+          category_id: category,
+          due_date: date || undefined,
+        });
+      }
       
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to create task:', error);
+      console.error('Failed to save task:', error);
     }
   };
 
@@ -180,4 +185,3 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     </>
   );
 }
-

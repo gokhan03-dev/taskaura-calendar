@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -27,8 +26,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
   const { tasks, isLoading: tasksLoading, subscribeToTasks } = useTasks();
   const { meetings, isLoading: meetingsLoading, deleteMeeting, subscribeToMeetings } = useMeetings();
@@ -44,6 +43,16 @@ const Index = () => {
       unsubscribeMeetings();
     };
   }, []);
+
+  const handleTaskEdit = (task: Task) => {
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
+  };
+
+  const handleMeetingEdit = (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
+    setScheduleDialogOpen(true);
+  };
 
   const filteredItems = [
     ...(tasks || []).map(task => ({ 
@@ -134,7 +143,7 @@ const Index = () => {
               <Button 
                 className="bg-accent text-white hover:bg-accent-hover"
                 onClick={() => {
-                  setSelectedTaskId(null);
+                  setSelectedTask(null);
                   setTaskDialogOpen(true);
                 }}
               >
@@ -145,7 +154,7 @@ const Index = () => {
                 variant="outline" 
                 className="border-accent text-accent hover:bg-accent hover:text-white"
                 onClick={() => {
-                  setSelectedMeetingId(null);
+                  setSelectedMeeting(null);
                   setScheduleDialogOpen(true);
                 }}
               >
@@ -163,38 +172,14 @@ const Index = () => {
                   item.type === 'task' ? (
                     <TaskCard
                       key={item.id}
-                      task={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        date: item.due_date,
-                        category: item.category_id || 'Uncategorized',
-                        completed: item.status === 'completed',
-                        tags: [],
-                      }}
-                      onEdit={() => {
-                        setSelectedTaskId(item.id);
-                        setTaskDialogOpen(true);
-                      }}
+                      task={item}
+                      onEdit={() => handleTaskEdit(item)}
                     />
                   ) : (
                     <MeetingCard
                       key={item.id}
-                      meeting={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description || '',
-                        start_time: item.start_time,
-                        end_time: item.end_time,
-                        attendees: item.attendees || [],
-                        meeting_type: item.meeting_type,
-                        location: item.location || '',
-                        recurrence_pattern: item.recurrence_pattern,
-                      }}
-                      onEdit={() => {
-                        setSelectedMeetingId(item.id);
-                        setScheduleDialogOpen(true);
-                      }}
+                      meeting={item}
+                      onEdit={() => handleMeetingEdit(item)}
                       onDelete={() => deleteMeeting.mutate(item.id)}
                     />
                   )
@@ -208,38 +193,14 @@ const Index = () => {
                   item.type === 'task' ? (
                     <TaskCard
                       key={item.id}
-                      task={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        date: item.due_date,
-                        category: item.category_id || 'Uncategorized',
-                        completed: item.status === 'completed',
-                        tags: [],
-                      }}
-                      onEdit={() => {
-                        setSelectedTaskId(item.id);
-                        setTaskDialogOpen(true);
-                      }}
+                      task={item}
+                      onEdit={() => handleTaskEdit(item)}
                     />
                   ) : (
                     <MeetingCard
                       key={item.id}
-                      meeting={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description || '',
-                        start_time: item.start_time,
-                        end_time: item.end_time,
-                        attendees: item.attendees || [],
-                        meeting_type: item.meeting_type,
-                        location: item.location || '',
-                        recurrence_pattern: item.recurrence_pattern,
-                      }}
-                      onEdit={() => {
-                        setSelectedMeetingId(item.id);
-                        setScheduleDialogOpen(true);
-                      }}
+                      meeting={item}
+                      onEdit={() => handleMeetingEdit(item)}
                       onDelete={() => deleteMeeting.mutate(item.id)}
                     />
                   )
@@ -253,38 +214,14 @@ const Index = () => {
                   item.type === 'task' ? (
                     <TaskCard
                       key={item.id}
-                      task={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        date: item.due_date,
-                        category: item.category_id || 'Uncategorized',
-                        completed: item.status === 'completed',
-                        tags: [],
-                      }}
-                      onEdit={() => {
-                        setSelectedTaskId(item.id);
-                        setTaskDialogOpen(true);
-                      }}
+                      task={item}
+                      onEdit={() => handleTaskEdit(item)}
                     />
                   ) : (
                     <MeetingCard
                       key={item.id}
-                      meeting={{
-                        id: item.id,
-                        title: item.title,
-                        description: item.description || '',
-                        start_time: item.start_time,
-                        end_time: item.end_time,
-                        attendees: item.attendees || [],
-                        meeting_type: item.meeting_type,
-                        location: item.location || '',
-                        recurrence_pattern: item.recurrence_pattern,
-                      }}
-                      onEdit={() => {
-                        setSelectedMeetingId(item.id);
-                        setScheduleDialogOpen(true);
-                      }}
+                      meeting={item}
+                      onEdit={() => handleMeetingEdit(item)}
                       onDelete={() => deleteMeeting.mutate(item.id)}
                     />
                   )
@@ -295,11 +232,19 @@ const Index = () => {
 
           <TaskDialog 
             open={taskDialogOpen} 
-            onOpenChange={setTaskDialogOpen}
+            onOpenChange={(open) => {
+              setTaskDialogOpen(open);
+              if (!open) setSelectedTask(null);
+            }}
+            taskToEdit={selectedTask}
           />
           <ScheduleDialog 
             open={scheduleDialogOpen} 
-            onOpenChange={setScheduleDialogOpen}
+            onOpenChange={(open) => {
+              setScheduleDialogOpen(open);
+              if (!open) setSelectedMeeting(null);
+            }}
+            meetingToEdit={selectedMeeting}
           />
         </main>
       </div>
