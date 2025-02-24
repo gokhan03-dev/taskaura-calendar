@@ -20,21 +20,18 @@ export const useTasks = () => {
     queryFn: async () => {
       if (!user) throw new Error('User must be authenticated to fetch tasks');
 
-      console.log('Fetching tasks for user:', user.id);
-
       const { data, error } = await supabase
         .from('tasks')
         .select(`
           *,
-          categories (*),
+          categories!inner (*),
           subtasks (
             id,
             title,
             completed
           ),
-          task_tags (
-            tag_id,
-            tags (
+          task_tags!left (
+            tags!inner (
               id,
               name
             )
@@ -48,28 +45,11 @@ export const useTasks = () => {
         throw error;
       }
 
-      console.log('Raw tasks data:', data);
-
       // Transform the data to match the Task type
-      const transformedData = data?.map(task => {
-        // Transform task_tags into tags array
-        const tags = task.task_tags
-          ?.map(tt => tt.tags)
-          .filter(tag => tag) // Filter out any null values
-          .map(tag => ({
-            id: tag.id,
-            label: tag.name
-          }));
-
-        console.log(`Transformed tags for task ${task.id}:`, tags);
-
-        return {
-          ...task,
-          tags: tags || []
-        };
-      });
-
-      console.log('Transformed tasks data:', transformedData);
+      const transformedData = data?.map(task => ({
+        ...task,
+        tags: task.task_tags?.map(tt => tt.tags) || []
+      }));
 
       return transformedData as Task[];
     },
@@ -81,6 +61,8 @@ export const useTasks = () => {
     mutationFn: async (newTask: CreateTaskInput) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
+      console.log('Creating task with data:', newTask); // Debug log
+
       const taskWithUserId = {
         ...newTask,
         user_id: user.id,
@@ -88,24 +70,66 @@ export const useTasks = () => {
         priority: newTask.priority || 'medium',
       };
 
-      const { data, error } = await supabase
+      const { data: createdTask, error: taskError } = await supabase
         .from('tasks')
         .insert(taskWithUserId)
+        .select('*')
+        .single();
+
+      if (taskError) throw taskError;
+
+      console.log('Created task:', createdTask); // Debug log
+
+      // If there are tags, handle them separately
+      if (newTask.tags && newTask.tags.length > 0) {
+        console.log('Processing tags:', newTask.tags); // Debug log
+        
+        for (const tag of newTask.tags) {
+          // First ensure the tag exists
+          let tagId = tag.id;
+          if (!tagId) {
+            const { data: newTag, error: tagError } = await supabase
+              .from('tags')
+              .upsert({ name: tag.label, user_id: user.id })
+              .select()
+              .single();
+
+            if (tagError) throw tagError;
+            tagId = newTag.id;
+            console.log('Created new tag:', newTag); // Debug log
+          }
+
+          // Then create the task-tag relationship
+          const { error: relationError } = await supabase
+            .from('task_tags')
+            .insert({ task_id: createdTask.id, tag_id: tagId });
+
+          if (relationError) throw relationError;
+          console.log('Created task-tag relationship:', { task_id: createdTask.id, tag_id: tagId }); // Debug log
+        }
+      }
+
+      // Fetch the complete task with all related data
+      const { data: finalTask, error: fetchError } = await supabase
+        .from('tasks')
         .select(`
           *,
           categories (*),
           subtasks (*),
-          task_tags (
-            tags (*)
+          task_tags!left (
+            tags!inner (
+              id,
+              name
+            )
           )
         `)
+        .eq('id', createdTask.id)
         .single();
 
-      if (error) {
-        console.error('Error creating task:', error);
-        throw error;
-      }
-      return data;
+      if (fetchError) throw fetchError;
+      console.log('Final task with relationships:', finalTask); // Debug log
+
+      return finalTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
