@@ -20,18 +20,18 @@ export const useTasks = () => {
     queryFn: async () => {
       if (!user) throw new Error('User must be authenticated to fetch tasks');
 
-      const { data, error } = await supabase
+      const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select(`
           *,
-          categories!inner (*),
+          categories (*),
           subtasks (
             id,
             title,
             completed
           ),
-          task_tags!left (
-            tags!inner (
+          task_tags!inner (
+            tags (
               id,
               name
             )
@@ -40,52 +40,91 @@ export const useTasks = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching tasks:', error);
-        throw error;
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError);
+        throw tasksError;
       }
 
       // Transform the data to match the Task type
-      const transformedData = data?.map(task => ({
+      const transformedData = tasksData?.map(task => ({
         ...task,
-        tags: task.task_tags?.map(tt => tt.tags) || []
+        tags: task.task_tags.map(tt => tt.tags)
       }));
 
+      console.log('Transformed tasks with tags:', transformedData);
       return transformedData as Task[];
     },
     enabled: !!user,
   });
 
-  // Create task mutation
+  // Create task mutation with proper tag handling
   const createTask = useMutation({
-    mutationFn: async (newTask: CreateTaskInput) => {
+    mutationFn: async (newTask: CreateTaskInput & { tags?: string[] }) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
-      const taskWithUserId = {
-        ...newTask,
-        user_id: user.id,
-        status: 'pending' as const,
-        priority: newTask.priority || 'medium',
-      };
-
-      const { data, error } = await supabase
+      const { tags, ...taskData } = newTask;
+      
+      // 1. Create the task first
+      const { data: task, error: taskError } = await supabase
         .from('tasks')
-        .insert(taskWithUserId)
-        .select(`
-          *,
-          categories (*),
-          subtasks (*),
-          task_tags (
-            tags (*)
-          )
-        `)
+        .insert([{
+          ...taskData,
+          user_id: user.id,
+          status: 'pending',
+        }])
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error creating task:', error);
-        throw error;
+      if (taskError) throw taskError;
+
+      // 2. Handle tags if provided
+      if (tags && tags.length > 0) {
+        // First ensure all tags exist
+        const existingTagsPromises = tags.map(tagName => 
+          supabase
+            .from('tags')
+            .select('id, name')
+            .eq('name', tagName)
+            .eq('user_id', user.id)
+            .single()
+            .then(({ data }) => data)
+        );
+
+        const existingTagsResults = await Promise.all(existingTagsPromises);
+        const existingTags = existingTagsResults.filter(Boolean);
+        const existingTagNames = new Set(existingTags.map(t => t.name));
+
+        // Create new tags that don't exist
+        const newTagNames = tags.filter(tag => !existingTagNames.has(tag));
+        
+        let allTagIds = existingTags.map(t => t.id);
+
+        if (newTagNames.length > 0) {
+          const { data: newTags, error: newTagsError } = await supabase
+            .from('tags')
+            .insert(newTagNames.map(name => ({
+              name,
+              user_id: user.id
+            })))
+            .select('id');
+
+          if (newTagsError) throw newTagsError;
+          
+          allTagIds = [...allTagIds, ...(newTags?.map(t => t.id) || [])];
+        }
+
+        // Create task-tag associations
+        const { error: taskTagsError } = await supabase
+          .from('task_tags')
+          .insert(allTagIds.map(tagId => ({
+            task_id: task.id,
+            tag_id: tagId
+          })));
+
+        if (taskTagsError) throw taskTagsError;
       }
-      return data;
+
+      return task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
