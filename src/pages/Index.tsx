@@ -13,6 +13,21 @@ import { useMeetings } from "@/hooks/useMeetings";
 import { Task } from "@/lib/types/task";
 import { Meeting } from "@/lib/types/meeting";
 
+type FilteredTask = Task & {
+  type: 'task';
+  date: string | null;
+  category: string;
+};
+
+type FilteredMeeting = Meeting & {
+  type: 'meeting';
+  attendees: any[];
+  location: string;
+  description: string;
+};
+
+type FilteredItem = FilteredTask | FilteredMeeting;
+
 const ProgressCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
   <div className="bg-white rounded-xl p-6 shadow-glass">
     <div className="flex items-center gap-4 mb-4">
@@ -57,16 +72,16 @@ const Index = () => {
     setScheduleDialogOpen(true);
   };
 
-  const filteredItems = [
-    ...(tasks || []).map(task => ({
+  const filteredItems: FilteredItem[] = [
+    ...(tasks || []).map((task): FilteredTask => ({
       ...task,
-      type: 'task' as const,
+      type: 'task',
       date: task.due_date,
       category: task.category_id || 'Uncategorized',
     })),
-    ...(meetings || []).map(meeting => ({
+    ...(meetings || []).map((meeting): FilteredMeeting => ({
       ...meeting,
-      type: 'meeting' as const,
+      type: 'meeting',
       attendees: meeting.attendees || [],
       location: meeting.location || '',
       description: meeting.description || '',
