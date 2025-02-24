@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Task, CreateTaskInput, UpdateTaskInput } from '@/lib/types/task';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 export const useTasks = () => {
   const { user } = useAuth();
@@ -56,36 +56,128 @@ export const useTasks = () => {
     enabled: !!user,
   });
 
+  // Add useEffect to check and update task status based on meeting times
+  useEffect(() => {
+    if (!user || !tasks) return;
+
+    const checkTaskStatus = async () => {
+      const now = new Date();
+      
+      for (const task of tasks) {
+        if (task.due_date) {
+          const dueDate = new Date(task.due_date);
+          
+          // Check if task should move to in_progress
+          if (task.status === 'pending' && dueDate <= now) {
+            await updateTask.mutateAsync({
+              id: task.id,
+              status: 'in_progress'
+            });
+          }
+          
+          // Check if task should move to completed
+          if (task.status === 'in_progress' && 
+              dueDate.getTime() + (2 * 60 * 60 * 1000) <= now.getTime()) { // 2 hours after due time
+            await updateTask.mutateAsync({
+              id: task.id,
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            });
+          }
+        }
+      }
+    };
+
+    // Run the check every minute
+    const interval = setInterval(checkTaskStatus, 60000);
+    
+    // Initial check
+    checkTaskStatus();
+
+    return () => clearInterval(interval);
+  }, [user, tasks]);
+
   // Create task mutation
   const createTask = useMutation({
-    mutationFn: async (newTask: CreateTaskInput) => {
+    mutationFn: async (newTask: CreateTaskInput & { subtasks?: { title: string }[]; tags?: string[] }) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
+      const { subtasks, tags, ...taskData } = newTask;
+      
       const taskWithUserId = {
-        ...newTask,
+        ...taskData,
         user_id: user.id,
         status: 'pending' as const,
         priority: newTask.priority || 'medium',
       };
 
-      const { data, error } = await supabase
+      // Insert task
+      const { data: task, error: taskError } = await supabase
         .from('tasks')
         .insert(taskWithUserId)
-        .select(`
-          *,
-          categories (*),
-          subtasks (*),
-          task_tags (
-            tags (*)
-          )
-        `)
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error creating task:', error);
-        throw error;
+      if (taskError) throw taskError;
+
+      // Insert subtasks if provided
+      if (subtasks && subtasks.length > 0) {
+        const { error: subtasksError } = await supabase
+          .from('subtasks')
+          .insert(subtasks.map(st => ({
+            task_id: task.id,
+            title: st.title,
+            completed: false
+          })));
+
+        if (subtasksError) throw subtasksError;
       }
-      return data;
+
+      // Insert tags if provided
+      if (tags && tags.length > 0) {
+        // First ensure tags exist
+        const { data: existingTags } = await supabase
+          .from('tags')
+          .select('id, name')
+          .in('name', tags);
+
+        const existingTagNames = new Set(existingTags?.map(t => t.name) || []);
+        const newTags = tags.filter(tag => !existingTagNames.has(tag));
+
+        // Insert new tags
+        if (newTags.length > 0) {
+          const { error: newTagsError } = await supabase
+            .from('tags')
+            .insert(newTags.map(name => ({
+              name,
+              user_id: user.id
+            })));
+
+          if (newTagsError) throw newTagsError;
+        }
+
+        // Get all tag IDs (both existing and newly created)
+        const { data: allTags, error: tagsError } = await supabase
+          .from('tags')
+          .select('id, name')
+          .in('name', tags);
+
+        if (tagsError) throw tagsError;
+
+        // Create task-tag associations
+        if (allTags) {
+          const { error: taskTagsError } = await supabase
+            .from('task_tags')
+            .insert(allTags.map(tag => ({
+              task_id: task.id,
+              tag_id: tag.id
+            })));
+
+          if (taskTagsError) throw taskTagsError;
+        }
+      }
+
+      return task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
