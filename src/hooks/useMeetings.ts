@@ -1,8 +1,10 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Meeting, CreateMeetingInput, UpdateMeetingInput } from '@/lib/types/meeting';
 import { useToast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
 
 export const useMeetings = () => {
   const { user } = useAuth();
@@ -88,7 +90,7 @@ export const useMeetings = () => {
         description: "Meeting created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -117,7 +119,7 @@ export const useMeetings = () => {
         description: "Meeting updated successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -143,7 +145,7 @@ export const useMeetings = () => {
         description: "Meeting deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -181,7 +183,7 @@ export const useMeetings = () => {
         description: "Attendee status updated successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -191,7 +193,9 @@ export const useMeetings = () => {
   });
 
   // Set up real-time subscription
-  const subscribeToMeetings = () => {
+  const subscribeToMeetings = useCallback(() => {
+    if (!user) return () => {};
+
     const channel = supabase
       .channel('meetings-channel')
       .on(
@@ -221,7 +225,7 @@ export const useMeetings = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [user, queryClient]);
 
   return {
     meetings,
