@@ -16,26 +16,42 @@ export const useTasks = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', user?.id],
     queryFn: async () => {
+      if (!user) throw new Error('User must be authenticated to fetch tasks');
+
       const { data, error } = await supabase
         .from('tasks')
         .select(`
           *,
-          categories (*),
-          subtasks (*),
-          task_tags (
-            tag_id,
-            tags (*)
+          categories!inner (*),
+          subtasks (
+            id,
+            title,
+            completed
+          ),
+          task_tags!left (
+            tags!inner (
+              id,
+              name
+            )
           )
         `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching tasks:', error);
         throw error;
       }
-      return data as Task[];
+
+      // Transform the data to match the Task type
+      const transformedData = data?.map(task => ({
+        ...task,
+        tags: task.task_tags?.map(tt => tt.tags) || []
+      }));
+
+      return transformedData as Task[];
     },
     enabled: !!user,
   });
@@ -48,14 +64,21 @@ export const useTasks = () => {
       const taskWithUserId = {
         ...newTask,
         user_id: user.id,
-        status: 'pending',
+        status: 'pending' as const,
         priority: newTask.priority || 'medium',
       };
 
       const { data, error } = await supabase
         .from('tasks')
         .insert(taskWithUserId)
-        .select()
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
       if (error) {
@@ -65,7 +88,7 @@ export const useTasks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
       toast({
         title: "Success",
         description: "Task created successfully",
@@ -84,6 +107,18 @@ export const useTasks = () => {
   // Update task mutation
   const updateTask = useMutation({
     mutationFn: async ({ id, ...updates }: UpdateTaskInput & { id: string }) => {
+      if (!user) throw new Error('User must be authenticated to update tasks');
+
+      const { data: existingTask } = await supabase
+        .from('tasks')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+
+      if (existingTask?.user_id !== user.id) {
+        throw new Error('Unauthorized to update this task');
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .update({
@@ -94,7 +129,14 @@ export const useTasks = () => {
             : updates.completed_at,
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
       if (error) {
@@ -104,7 +146,7 @@ export const useTasks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
       toast({
         title: "Success",
         description: "Task updated successfully",
@@ -123,6 +165,18 @@ export const useTasks = () => {
   // Delete task mutation
   const deleteTask = useMutation({
     mutationFn: async (id: string) => {
+      if (!user) throw new Error('User must be authenticated to delete tasks');
+
+      const { data: existingTask } = await supabase
+        .from('tasks')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+
+      if (existingTask?.user_id !== user.id) {
+        throw new Error('Unauthorized to delete this task');
+      }
+
       // First delete related records
       const deleteRelatedPromises = [
         supabase.from('subtasks').delete().eq('task_id', id),
@@ -144,7 +198,7 @@ export const useTasks = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
       toast({
         title: "Success",
         description: "Task deleted successfully",
@@ -162,6 +216,8 @@ export const useTasks = () => {
 
   // Set up real-time subscription
   const subscribeToTasks = () => {
+    if (!user) return () => {};
+
     const channel = supabase
       .channel('tasks-channel')
       .on(
@@ -170,10 +226,11 @@ export const useTasks = () => {
           event: '*',
           schema: 'public',
           table: 'tasks',
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Task change received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          queryClient.invalidateQueries({ queryKey: ['tasks', user.id] });
         }
       )
       .subscribe();
