@@ -46,6 +46,10 @@ export default {
           800: "#1F2937",
           900: "#111827",
         },
+        popover: {
+          DEFAULT: "hsl(0 0% 100%)",
+          foreground: "hsl(222.2 84% 4.9%)",
+        },
       },
       borderRadius: {
         DEFAULT: "0.75rem",

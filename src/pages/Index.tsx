@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -36,6 +35,7 @@ const Index = () => {
       date: "2024-02-11",
       category: "Personal",
       completed: false,
+      priority: "high",
       tags: [{ id: "1", label: "Home" }],
       subtasks: [
         { id: "1", title: "Clean kitchen", completed: true },
@@ -50,6 +50,7 @@ const Index = () => {
       date: "2024-02-22",
       category: "Work",
       completed: false,
+      priority: "medium",
       tags: [{ id: "2", label: "Website" }],
       subtasks: []
     }

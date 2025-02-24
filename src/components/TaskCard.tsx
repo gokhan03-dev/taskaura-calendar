@@ -5,7 +5,7 @@ import {
   Tag, 
   List, 
   Repeat, 
-  Users 
+  Flag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,12 +18,19 @@ interface TaskCardProps {
     date: string;
     category: string;
     completed: boolean;
+    priority: "high" | "medium" | "low";
     tags?: { id: string; label: string }[];
     subtasks?: { id: string; title: string; completed: boolean }[];
     recurrencePattern?: { frequency: string; interval: number };
   };
   onEdit: () => void;
 }
+
+const priorityColors = {
+  high: "#F97316",
+  medium: "#FEC6A1",
+  low: "#8E9196"
+} as const;
 
 export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
   const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
@@ -45,9 +52,15 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
         />
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
-              {task.title}
-            </h4>
+            <div className="flex items-center gap-2">
+              <Flag 
+                className="h-4 w-4" 
+                style={{ color: priorityColors[task.priority] }}
+              />
+              <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
+                {task.title}
+              </h4>
+            </div>
             <div className="flex items-center gap-2">
               {task.recurrencePattern && (
                 <Repeat className="h-4 w-4 text-neutral-400" />
