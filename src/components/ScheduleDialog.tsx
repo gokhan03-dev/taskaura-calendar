@@ -1,21 +1,26 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { MeetingFormFields } from "./meeting/MeetingFormFields";
 import { useMeetings } from "@/hooks/useMeetings";
 import { RecurrenceModal } from "./RecurrenceModal";
 import { ReminderModal } from "./ReminderModal";
-import { format } from "date-fns";
+import { Meeting } from "@/lib/types/meeting";
+
+interface ScheduleDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  meetingToEdit?: Meeting;
+}
 
 export function ScheduleDialog({
   open,
   onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { createMeeting } = useMeetings();
+  meetingToEdit
+}: ScheduleDialogProps) {
+  const { createMeeting, updateMeeting } = useMeetings();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -30,6 +35,29 @@ export function ScheduleDialog({
   const [reminderSettings, setReminderSettings] = useState<any>(null);
   const [newAttendeeEmail, setNewAttendeeEmail] = useState("");
 
+  useEffect(() => {
+    if (open && meetingToEdit) {
+      setTitle(meetingToEdit.title);
+      setDescription(meetingToEdit.description || "");
+      setDate(format(new Date(meetingToEdit.start_time), "yyyy-MM-dd"));
+      setTime(format(new Date(meetingToEdit.start_time), "HH:mm"));
+      
+      // Calculate duration in minutes
+      const start = new Date(meetingToEdit.start_time);
+      const end = new Date(meetingToEdit.end_time);
+      const durationInMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+      setDuration(durationInMinutes.toString());
+      
+      setMeetingType(meetingToEdit.meeting_type);
+      setLocation(meetingToEdit.location || "");
+      setAttendees(meetingToEdit.attendees?.map(a => ({
+        email: a.email,
+        rsvp: a.rsvp_status
+      })) || []);
+      setRecurrencePattern(meetingToEdit.recurrence_pattern || null);
+    }
+  }, [open, meetingToEdit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -37,7 +65,7 @@ export function ScheduleDialog({
     const endTime = new Date(new Date(startTime).getTime() + parseInt(duration) * 60000).toISOString();
 
     try {
-      await createMeeting.mutateAsync({
+      const meetingData = {
         title,
         description,
         start_time: startTime,
@@ -54,11 +82,21 @@ export function ScheduleDialog({
             count: recurrencePattern.occurrences,
           },
         }),
-      });
+      };
+
+      if (meetingToEdit) {
+        await updateMeeting.mutateAsync({
+          id: meetingToEdit.id,
+          ...meetingData
+        });
+      } else {
+        await createMeeting.mutateAsync(meetingData);
+      }
+      
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      console.error('Failed to create meeting:', error);
+      console.error('Failed to save meeting:', error);
     }
   };
 
@@ -80,7 +118,7 @@ export function ScheduleDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Schedule Meeting</DialogTitle>
+            <DialogTitle>{meetingToEdit ? 'Edit Meeting' : 'Schedule Meeting'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <MeetingFormFields
@@ -115,7 +153,9 @@ export function ScheduleDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit">Schedule Meeting</Button>
+              <Button type="submit">
+                {meetingToEdit ? 'Save Changes' : 'Schedule Meeting'}
+              </Button>
             </div>
           </form>
         </DialogContent>

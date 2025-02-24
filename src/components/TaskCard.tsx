@@ -5,7 +5,8 @@ import {
   Tag, 
   List, 
   Repeat, 
-  Users 
+  Users,
+  Trash2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +19,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
-  const { updateTask } = useTasks();
+  const { updateTask, deleteTask } = useTasks();
   const isCompleted = task.status === 'completed';
 
   const handleToggleCompletion = async (e: React.MouseEvent) => {
@@ -31,6 +32,15 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
       });
     } catch (error) {
       console.error('Error toggling task completion:', error);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteTask.mutateAsync(task.id);
+    } catch (error) {
+      console.error('Error deleting task:', error);
     }
   };
 
@@ -57,6 +67,14 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
               <span className="text-sm text-neutral-500">
                 {task.due_date && format(new Date(task.due_date), 'MMM dd')}
               </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4 text-neutral-500 hover:text-red-500" />
+              </Button>
             </div>
           </div>
           <p className={`text-sm text-neutral-500 mb-3 ${isCompleted ? 'line-through' : ''}`}>

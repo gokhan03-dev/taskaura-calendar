@@ -247,6 +247,7 @@ const Index = () => {
               setScheduleDialogOpen(open);
               if (!open) setSelectedMeeting(null);
             }}
+            meetingToEdit={selectedMeeting || undefined}
           />
         </main>
       </div>
