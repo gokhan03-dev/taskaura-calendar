@@ -1,6 +1,6 @@
 
 import { format } from "date-fns";
-import { Users, Video, MapPin, X, Repeat } from "lucide-react";
+import { Users, Video, MapPin, Trash2, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MeetingCardProps {
@@ -46,7 +46,7 @@ export const MeetingCard = ({ meeting, onEdit, onDelete }: MeetingCardProps) => 
               onDelete();
             }}
           >
-            <X className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 text-neutral-500 hover:text-red-500" />
           </Button>
         </div>
       </div>
