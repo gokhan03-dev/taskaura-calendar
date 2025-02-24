@@ -37,11 +37,15 @@ export const useTasks = () => {
       const taskWithUserId = {
         ...newTask,
         user_id: user.id,
+        status: 'pending',
+        priority: 'medium',
       };
+
+      console.log('Sending task data to Supabase:', taskWithUserId); // Debug log
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert(taskWithUserId)
+        .insert([taskWithUserId])
         .select()
         .single();
 
@@ -55,7 +59,8 @@ export const useTasks = () => {
         description: "Task created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error('Task creation error details:', error); // Debug log
       toast({
         variant: "destructive",
         title: "Error",
