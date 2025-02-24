@@ -401,7 +401,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      rls_enabled: {
+        Args: {
+          table_name: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
