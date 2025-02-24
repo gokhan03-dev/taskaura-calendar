@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -57,27 +58,26 @@ const Index = () => {
   };
 
   const filteredItems = [
-    ...(tasks || []).map(task => ({ 
-      ...task, 
+    ...(tasks || []).map(task => ({
+      ...task,
       type: 'task' as const,
-      completed: task.status === 'completed',
       date: task.due_date,
       category: task.category_id || 'Uncategorized',
     })),
-    ...(meetings || []).map(meeting => ({ 
-      ...meeting, 
+    ...(meetings || []).map(meeting => ({
+      ...meeting,
       type: 'meeting' as const,
       attendees: meeting.attendees || [],
       location: meeting.location || '',
       description: meeting.description || '',
     })),
-  ].filter(item => 
+  ].filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.description || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pendingItems = filteredItems.filter(item => 
-    (item.type === 'task' && item.status !== 'completed') ||
+    (item.type === 'task' && item.status === 'pending') ||
     (item.type === 'meeting' && item.status === 'scheduled')
   );
 
