@@ -20,6 +20,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { Task } from "@/lib/types/task";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 
 interface TaskDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ interface TaskDialogProps {
 export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) {
   const { createTask, updateTask } = useTasks();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [title, setTitle] = useState(taskToEdit?.title || "");
   const [description, setDescription] = useState(taskToEdit?.description || "");
   const [category, setCategory] = useState<string | null>(taskToEdit?.category_id || null);
@@ -122,6 +124,16 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to create or edit tasks.",
+      });
+      return;
+    }
+
     try {
       const taskData = {
         title,
@@ -161,7 +173,10 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
           if (!tagId) {
             const { data: newTag, error: tagError } = await supabase
               .from('tags')
-              .upsert({ name: tag.label })
+              .upsert({ 
+                name: tag.label,
+                user_id: user.id  // Add the user_id here
+              })
               .select()
               .single();
 
