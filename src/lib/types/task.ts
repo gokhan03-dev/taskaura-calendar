@@ -14,6 +14,7 @@ export interface Task {
   created_at: string;
   updated_at: string;
   recurrence_pattern?: RecurrencePattern;
+  tags?: Array<{ id?: string; label: string; }>;
 }
 
 export interface CreateTaskInput {
@@ -22,6 +23,7 @@ export interface CreateTaskInput {
   category_id?: string;
   due_date?: string;
   priority?: 'low' | 'medium' | 'high';
+  tags?: Array<{ id?: string; label: string; }>;
 }
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
