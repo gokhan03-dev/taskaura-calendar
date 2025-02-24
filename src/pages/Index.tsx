@@ -14,12 +14,14 @@ import { Task } from "@/lib/types/task";
 import { Meeting } from "@/lib/types/meeting";
 
 type TaskStatus = 'completed' | 'pending' | 'in_progress';
+type TaskPriority = 'low' | 'medium' | 'high';
 
-type FilteredTask = Omit<Task, 'status'> & {
+type FilteredTask = Omit<Task, 'status' | 'priority'> & {
   type: 'task';
   date: string | null;
   category: string;
   status: TaskStatus;
+  priority: TaskPriority;
 };
 
 type FilteredMeeting = Meeting & {
@@ -82,14 +84,25 @@ const Index = () => {
     return 'pending'; // Default fallback
   };
 
+  const validateTaskPriority = (priority: string): TaskPriority => {
+    if (priority === 'low' || priority === 'medium' || priority === 'high') {
+      return priority;
+    }
+    return 'medium'; // Default fallback
+  };
+
   const filteredItems: FilteredItem[] = [
-    ...(tasks || []).map((task): FilteredTask => ({
-      ...task,
-      type: 'task',
-      date: task.due_date,
-      category: task.category_id || 'Uncategorized',
-      status: validateTaskStatus(task.status),
-    })),
+    ...(tasks || []).map((task): FilteredTask => {
+      const validatedTask: FilteredTask = {
+        ...task,
+        type: 'task',
+        date: task.due_date,
+        category: task.category_id || 'Uncategorized',
+        status: validateTaskStatus(task.status),
+        priority: validateTaskPriority(task.priority)
+      };
+      return validatedTask;
+    }),
     ...(meetings || []).map((meeting): FilteredMeeting => ({
       ...meeting,
       type: 'meeting',
