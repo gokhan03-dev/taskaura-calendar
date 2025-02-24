@@ -13,10 +13,13 @@ import { useMeetings } from "@/hooks/useMeetings";
 import { Task } from "@/lib/types/task";
 import { Meeting } from "@/lib/types/meeting";
 
-type FilteredTask = Task & {
+type TaskStatus = 'completed' | 'pending' | 'in_progress';
+
+type FilteredTask = Omit<Task, 'status'> & {
   type: 'task';
   date: string | null;
   category: string;
+  status: TaskStatus;
 };
 
 type FilteredMeeting = Meeting & {
@@ -72,12 +75,20 @@ const Index = () => {
     setScheduleDialogOpen(true);
   };
 
+  const validateTaskStatus = (status: string): TaskStatus => {
+    if (status === 'completed' || status === 'pending' || status === 'in_progress') {
+      return status;
+    }
+    return 'pending'; // Default fallback
+  };
+
   const filteredItems: FilteredItem[] = [
     ...(tasks || []).map((task): FilteredTask => ({
       ...task,
       type: 'task',
       date: task.due_date,
       category: task.category_id || 'Uncategorized',
+      status: validateTaskStatus(task.status),
     })),
     ...(meetings || []).map((meeting): FilteredMeeting => ({
       ...meeting,
