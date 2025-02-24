@@ -27,14 +27,16 @@ interface TaskCardProps {
 }
 
 const priorityColors = {
-  high: "#F97316",
-  medium: "#FEC6A1",
-  low: "#8E9196"
+  high: "#ea384c", // Red
+  medium: "#FEF7CD", // Yellow
+  low: "#0EA5E9" // Blue
 } as const;
 
 export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
   const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
+  const visibleTags = task.tags?.slice(0, 3) || [];
+  const remainingTags = (task.tags?.length || 0) - visibleTags.length;
 
   return (
     <div 
@@ -55,7 +57,10 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
             <div className="flex items-center gap-2">
               <Flag 
                 className="h-4 w-4" 
-                style={{ color: priorityColors[task.priority] }}
+                style={{ 
+                  color: priorityColors[task.priority],
+                  fill: task.priority === "medium" ? "#FFB800" : "transparent"
+                }}
               />
               <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
                 {task.title}
@@ -89,17 +94,25 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
               {task.category}
             </span>
             
-            {task.tags && task.tags.length > 0 && (
-              <div className="flex items-center gap-1">
+            {visibleTags.length > 0 && (
+              <div className="flex items-center gap-2">
                 <Tag className="h-3 w-3 text-neutral-400" />
-                {task.tags.map(tag => (
-                  <span 
-                    key={tag.id}
-                    className="text-xs text-neutral-600"
-                  >
-                    {tag.label}
-                  </span>
-                ))}
+                <div className="flex items-center gap-1">
+                  {visibleTags.map((tag, index) => (
+                    <span 
+                      key={tag.id}
+                      className="text-xs text-neutral-600"
+                    >
+                      {tag.label}
+                      {index < visibleTags.length - 1 && ", "}
+                    </span>
+                  ))}
+                  {remainingTags > 0 && (
+                    <span className="text-xs text-neutral-400 ml-1">
+                      +{remainingTags} more
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
