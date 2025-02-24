@@ -1,9 +1,10 @@
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarPlus, Bell, Tags, List, Plus } from "lucide-react";
+import { CalendarPlus, Link2, X, Plus } from "lucide-react";
 import { TagInput, type TagType } from "@/components/TagInput";
 import { SubtaskInput, type Subtask } from "@/components/SubtaskInput";
 import { Category } from "@/components/CategoryModal";
@@ -13,6 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
 } from "@/components/ui/select";
 import {
   Popover,
@@ -170,6 +172,7 @@ export function TaskFormFields({
           />
         </div>
       </div>
+
       <div className="grid grid-cols-4 items-start gap-4">
         <Label className="text-right">Related</Label>
         <div className="col-span-3">
@@ -219,6 +222,7 @@ export function TaskFormFields({
           </div>
         </div>
       </div>
+
       <div className="grid grid-cols-4 items-start gap-4">
         <Label className="text-right">Subtasks</Label>
         <div className="col-span-3">
