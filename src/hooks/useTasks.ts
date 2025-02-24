@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -36,8 +35,8 @@ export const useTasks = () => {
               name
             )
           ),
-          dependencies:task_dependencies!dependent_task_id(
-            dependency:tasks(
+          dependencies:task_dependencies!task_dependencies_dependent_task_id_fkey (
+            dependency:tasks!task_dependencies_dependency_task_id_fkey (
               id,
               title,
               status
@@ -52,7 +51,7 @@ export const useTasks = () => {
         throw error;
       }
 
-      // Transform the data to match the Task type
+      // Transform the data to match the Task type - keeping the same transformation logic
       const transformedData = data?.map(task => ({
         ...task,
         tags: task.task_tags?.map(tt => tt.tags) || [],
