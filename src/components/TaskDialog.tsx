@@ -17,6 +17,8 @@ import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
 import { useTasks } from "@/hooks/use-tasks";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Task {
   id: string;
@@ -34,7 +36,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("work");
+  const [category, setCategory] = useState<string>("");
   const [date, setDate] = useState("");
   const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
   const [showRecurrence, setShowRecurrence] = useState(false);
@@ -42,13 +44,26 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
   const [showReminder, setShowReminder] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
   const [showCategories, setShowCategories] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "work", name: "Work", color: "#0EA5E9" },
-    { id: "personal", name: "Personal", color: "#8B5CF6" },
-  ]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [dependencies, setDependencies] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+
+  // Fetch categories from the database
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*');
+      
+      if (error) throw error;
+      return data.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        color: cat.color
+      }));
+    },
+  });
 
   const handleAddDependency = (taskId: string) => {
     const taskToAdd = availableTasks.find(task => task.id === taskId);
@@ -69,7 +84,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
         title,
         description,
         due_date: date,
-        category_id: category,
+        category_id: category, // Now using the actual UUID from the database
         priority,
         tags,
         subtasks,
@@ -82,7 +97,7 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
       setTitle("");
       setDescription("");
       setDate("");
-      setCategory("work");
+      setCategory("");
       setPriority("medium");
       setTags([]);
       setDependencies([]);
@@ -166,7 +181,10 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
         open={showCategories}
         onOpenChange={setShowCategories}
         categories={categories}
-        onSave={setCategories}
+        onSave={() => {
+          // We'll just refresh the categories query instead of managing state here
+          queryClient.invalidateQueries({ queryKey: ['categories'] });
+        }}
       />
     </>
   );
