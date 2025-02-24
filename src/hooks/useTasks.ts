@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Task, CreateTaskInput, UpdateTaskInput } from '@/lib/types/task';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useCallback } from 'react';
 
 export const useTasks = () => {
   const { user } = useAuth();
@@ -59,85 +58,34 @@ export const useTasks = () => {
 
   // Create task mutation
   const createTask = useMutation({
-    mutationFn: async (newTask: CreateTaskInput & { subtasks?: { title: string }[]; tags?: string[] }) => {
+    mutationFn: async (newTask: CreateTaskInput) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
-      const { subtasks, tags, ...taskData } = newTask;
-      
       const taskWithUserId = {
-        ...taskData,
+        ...newTask,
         user_id: user.id,
         status: 'pending' as const,
         priority: newTask.priority || 'medium',
       };
 
-      // Insert task
-      const { data: task, error: taskError } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .insert(taskWithUserId)
-        .select()
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
-      if (taskError) throw taskError;
-
-      // Insert subtasks if provided
-      if (subtasks && subtasks.length > 0) {
-        const { error: subtasksError } = await supabase
-          .from('subtasks')
-          .insert(subtasks.map(st => ({
-            task_id: task.id,
-            title: st.title,
-            completed: false
-          })));
-
-        if (subtasksError) throw subtasksError;
+      if (error) {
+        console.error('Error creating task:', error);
+        throw error;
       }
-
-      // Insert tags if provided
-      if (tags && tags.length > 0) {
-        // First ensure tags exist
-        const { data: existingTags } = await supabase
-          .from('tags')
-          .select('id, name')
-          .in('name', tags);
-
-        const existingTagNames = new Set(existingTags?.map(t => t.name) || []);
-        const newTags = tags.filter(tag => !existingTagNames.has(tag));
-
-        // Insert new tags
-        if (newTags.length > 0) {
-          const { error: newTagsError } = await supabase
-            .from('tags')
-            .insert(newTags.map(name => ({
-              name,
-              user_id: user.id
-            })));
-
-          if (newTagsError) throw newTagsError;
-        }
-
-        // Get all tag IDs (both existing and newly created)
-        const { data: allTags, error: tagsError } = await supabase
-          .from('tags')
-          .select('id, name')
-          .in('name', tags);
-
-        if (tagsError) throw tagsError;
-
-        // Create task-tag associations
-        if (allTags) {
-          const { error: taskTagsError } = await supabase
-            .from('task_tags')
-            .insert(allTags.map(tag => ({
-              task_id: task.id,
-              tag_id: tag.id
-            })));
-
-          if (taskTagsError) throw taskTagsError;
-        }
-      }
-
-      return task;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -181,10 +129,20 @@ export const useTasks = () => {
             : updates.completed_at,
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating task:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -234,7 +192,10 @@ export const useTasks = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting task:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -254,7 +215,7 @@ export const useTasks = () => {
   });
 
   // Set up real-time subscription
-  const subscribeToTasks = useCallback(() => {
+  const subscribeToTasks = () => {
     if (!user) return () => {};
 
     const channel = supabase
@@ -277,45 +238,7 @@ export const useTasks = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
-
-  // Check and update task status based on meeting times
-  useEffect(() => {
-    if (!user || !tasks) return;
-
-    const checkTaskStatus = async () => {
-      const now = new Date();
-      
-      for (const task of tasks) {
-        if (task.due_date) {
-          const dueDate = new Date(task.due_date);
-          
-          // Check if task should move to in_progress
-          if (task.status === 'pending' && dueDate <= now) {
-            await updateTask.mutateAsync({
-              id: task.id,
-              status: 'in_progress'
-            });
-          }
-          
-          // Check if task should move to completed
-          if (task.status === 'in_progress' && 
-              dueDate.getTime() + (2 * 60 * 60 * 1000) <= now.getTime()) {
-            await updateTask.mutateAsync({
-              id: task.id,
-              status: 'completed',
-              completed_at: new Date().toISOString()
-            });
-          }
-        }
-      }
-    };
-
-    const interval = setInterval(checkTaskStatus, 60000);
-    checkTaskStatus();
-
-    return () => clearInterval(interval);
-  }, [user, tasks, updateTask]);
+  };
 
   return {
     tasks,
