@@ -1,81 +1,27 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React from "react";
+import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/components/AuthProvider";
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import Settings from "./pages/Settings";
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" />;
-  }
-
-  return <>{children}</>;
-};
-
-const AuthCallback = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        navigate("/");
-      }
-    });
-  }, [navigate]);
-
-  return <div>Loading...</div>;
-};
+import { AuthProvider } from "./components/AuthProvider";
+import { Toaster } from "./components/ui/toaster";
+import { Layout } from "./components/Layout/Layout";
+import "./App.css";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <TooltipProvider>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <React.StrictMode>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Layout />
+            <Toaster />
+          </AuthProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </React.StrictMode>
   );
-};
+}
 
 export default App;
