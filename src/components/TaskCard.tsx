@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { 
   X, 
@@ -8,6 +9,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getAriaLabel } from "@/utils/accessibility";
+import { memo } from "react";
 
 interface TaskCardProps {
   task: {
@@ -23,6 +26,8 @@ interface TaskCardProps {
     recurrencePattern?: { frequency: string; interval: number };
   };
   onEdit: () => void;
+  onDelete?: (id: string) => void;
+  onToggleComplete?: (id: string, completed: boolean) => void;
 }
 
 export const priorityColors = {
@@ -31,25 +36,50 @@ export const priorityColors = {
   low: "#0EA5E9" // Ocean Blue
 } as const;
 
-export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
+const TaskCardComponent = ({ 
+  task, 
+  onEdit, 
+  onDelete, 
+  onToggleComplete 
+}: TaskCardProps) => {
   const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const visibleTags = task.tags?.slice(0, 3) || [];
   const remainingTags = (task.tags?.length || 0) - visibleTags.length;
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(task.id);
+    }
+  };
+
+  const handleToggleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleComplete) {
+      onToggleComplete(task.id, !task.completed);
+    }
+  };
+
   return (
     <div 
-      className="bg-white rounded-xl p-4 shadow-glass hover:shadow-lg transition-shadow cursor-pointer"
+      className="bg-white rounded-xl p-4 shadow-glass hover:shadow-lg transition-shadow cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
       onClick={onEdit}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onEdit();
+        }
+      }}
+      aria-label={`${task.title} - ${getAriaLabel(task.priority)}`}
     >
       <div className="flex items-start gap-3">
         <Checkbox 
           checked={task.completed}
           className="mt-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: Implement toggle completion
-          }}
+          onClick={handleToggleComplete}
+          aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
         />
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
@@ -61,6 +91,7 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
                   fill: priorityColors[task.priority],
                   opacity: task.priority === "low" ? 0.7 : 1
                 }}
+                aria-hidden="true"
               />
               <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
                 {task.title}
@@ -68,7 +99,10 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
             </div>
             <div className="flex items-center gap-2">
               {task.recurrencePattern && (
-                <Repeat className="h-4 w-4 text-neutral-400" />
+                <Repeat 
+                  className="h-4 w-4 text-neutral-400" 
+                  aria-label="Recurring task"
+                />
               )}
               <span className="text-sm text-neutral-500">
                 {format(new Date(task.date), 'MMM dd')}
@@ -77,10 +111,8 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: Implement delete
-                }}
+                onClick={handleDelete}
+                aria-label="Delete task"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -95,8 +127,8 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
             </span>
             
             {visibleTags.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Tag className="h-3 w-3 text-neutral-400" />
+              <div className="flex items-center gap-2" aria-label={`Tags: ${task.tags?.map(t => t.label).join(', ')}`}>
+                <Tag className="h-3 w-3 text-neutral-400" aria-hidden="true" />
                 <div className="flex items-center gap-1">
                   {visibleTags.map((tag, index) => (
                     <span 
@@ -117,8 +149,11 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
             )}
 
             {task.subtasks && task.subtasks.length > 0 && (
-              <div className="flex items-center gap-1 text-xs text-neutral-600">
-                <List className="h-3 w-3 text-neutral-400" />
+              <div 
+                className="flex items-center gap-1 text-xs text-neutral-600"
+                aria-label={`${completedSubtasks} of ${totalSubtasks} subtasks completed`}
+              >
+                <List className="h-3 w-3 text-neutral-400" aria-hidden="true" />
                 {completedSubtasks}/{totalSubtasks}
               </div>
             )}
@@ -128,3 +163,5 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
     </div>
   );
 };
+
+export const TaskCard = memo(TaskCardComponent);
