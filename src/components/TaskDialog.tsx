@@ -8,224 +8,71 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { useState } from "react";
 import { RecurrenceModal, type RecurrencePattern } from "./RecurrenceModal";
 import { ReminderModal, type ReminderSettings } from "./ReminderModal";
 import { CategoryModal, type Category } from "./CategoryModal";
 import { type TagType } from "./TagInput";
 import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
-import { useTasks } from "@/hooks/useTasks";
-import { Task } from "@/lib/types/task";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/AuthProvider";
+
+interface Task {
+  id: string;
+  title: string;
+}
 
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  taskToEdit?: Task;
+  availableTasks?: Task[];
 }
 
-export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) {
-  const { createTask, updateTask } = useTasks();
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [title, setTitle] = useState(taskToEdit?.title || "");
-  const [description, setDescription] = useState(taskToEdit?.description || "");
-  const [category, setCategory] = useState<string | null>(taskToEdit?.category_id || null);
-  const [date, setDate] = useState(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(taskToEdit?.priority || 'medium');
+export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("work");
+  const [date, setDate] = useState("");
   const [showRecurrence, setShowRecurrence] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>();
   const [showReminder, setShowReminder] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>();
   const [showCategories, setShowCategories] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: "work", name: "Work", color: "#0EA5E9" },
+    { id: "personal", name: "Personal", color: "#8B5CF6" },
+  ]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [dependencies, setDependencies] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data: fetchedCategories, error } = await supabase
-        .from('categories')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching categories:', error);
-        return;
-      }
-
-      if (fetchedCategories) {
-        setCategories(fetchedCategories);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  // Fetch task-specific data when editing
-  useEffect(() => {
-    const fetchTaskData = async () => {
-      if (taskToEdit) {
-        // Fetch tags
-        const { data: tagData, error: tagError } = await supabase
-          .from('task_tags')
-          .select(`
-            tags (
-              id,
-              name
-            )
-          `)
-          .eq('task_id', taskToEdit.id);
-
-        if (!tagError && tagData) {
-          const formattedTags = tagData
-            .map(t => t.tags)
-            .filter(Boolean)
-            .map(tag => ({
-              id: tag.id,
-              label: tag.name
-            }));
-          setTags(formattedTags);
-        }
-
-        // Fetch subtasks
-        const { data: subtaskData, error: subtaskError } = await supabase
-          .from('subtasks')
-          .select('*')
-          .eq('task_id', taskToEdit.id);
-
-        if (!subtaskError && subtaskData) {
-          setSubtasks(subtaskData);
-        }
-      }
-    };
-
-    fetchTaskData();
-  }, [taskToEdit]);
-
-  // Reset form when dialog opens/closes
-  useEffect(() => {
-    if (open) {
-      setTitle(taskToEdit?.title || "");
-      setDescription(taskToEdit?.description || "");
-      setCategory(taskToEdit?.category_id || null);
-      setDate(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
-      setPriority(taskToEdit?.priority || 'medium');
-    } else {
-      setTags([]);
-      setSubtasks([]);
-    }
-  }, [open, taskToEdit]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "You must be logged in to create or edit tasks.",
-      });
-      return;
-    }
-
-    try {
-      const taskData = {
-        title,
-        description,
-        category_id: category,
-        due_date: date || undefined,
-        priority,
-      };
-
-      let taskId: string;
-      
-      if (taskToEdit) {
-        await updateTask.mutateAsync({
-          id: taskToEdit.id,
-          ...taskData
-        });
-        taskId = taskToEdit.id;
-      } else {
-        const newTask = await createTask.mutateAsync(taskData);
-        taskId = newTask.id;
-      }
-
-      // Handle tags
-      if (tags.length > 0) {
-        // First, remove existing tags if editing
-        if (taskToEdit) {
-          await supabase
-            .from('task_tags')
-            .delete()
-            .eq('task_id', taskId);
-        }
-
-        // Insert new tags
-        for (const tag of tags) {
-          // Create tag if it doesn't exist
-          let tagId = tag.id;
-          if (!tagId) {
-            const { data: newTag, error: tagError } = await supabase
-              .from('tags')
-              .upsert({ 
-                name: tag.label,
-                user_id: user.id  // Add the user_id here
-              })
-              .select()
-              .single();
-
-            if (tagError) throw tagError;
-            tagId = newTag.id;
-          }
-
-          // Link tag to task
-          await supabase
-            .from('task_tags')
-            .upsert({ task_id: taskId, tag_id: tagId });
-        }
-      }
-
-      // Handle subtasks
-      if (subtasks.length > 0) {
-        // First, remove existing subtasks if editing
-        if (taskToEdit) {
-          await supabase
-            .from('subtasks')
-            .delete()
-            .eq('task_id', taskId);
-        }
-
-        // Insert new subtasks
-        await supabase
-          .from('subtasks')
-          .insert(subtasks.map(subtask => ({
-            task_id: taskId,
-            title: subtask.title,
-            completed: subtask.completed || false
-          })));
-      }
-
-      toast({
-        title: "Success",
-        description: taskToEdit ? "Task updated successfully" : "Task created successfully",
-      });
-      
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Failed to save task:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save task. Please try again.",
-      });
+  const handleAddDependency = (taskId: string) => {
+    const taskToAdd = availableTasks.find(task => task.id === taskId);
+    if (taskToAdd && !dependencies.some(dep => dep.id === taskId)) {
+      setDependencies([...dependencies, taskToAdd]);
     }
   };
+
+  const handleRemoveDependency = (taskId: string) => {
+    setDependencies(dependencies.filter(dep => dep.id !== taskId));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log({
+      title,
+      description,
+      category,
+      date,
+      recurrencePattern,
+      reminderSettings,
+      tags,
+      dependencies,
+      subtasks,
+    });
+    onOpenChange(false);
+  };
+
+  const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
 
   return (
     <>
@@ -233,9 +80,9 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{taskToEdit ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+              <DialogTitle>Add New Task</DialogTitle>
               <DialogDescription>
-                {taskToEdit ? 'Edit your task details.' : 'Create a new task to add to your list.'}
+                Create a new task to add to your list.
               </DialogDescription>
             </DialogHeader>
             
@@ -244,12 +91,10 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
               setTitle={setTitle}
               description={description}
               setDescription={setDescription}
-              category={category || ''}
+              category={category}
               setCategory={setCategory}
               date={date}
               setDate={setDate}
-              priority={priority}
-              setPriority={setPriority}
               categories={categories}
               setShowCategories={setShowCategories}
               recurrencePattern={recurrencePattern}
@@ -259,22 +104,15 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
               tags={tags}
               setTags={setTags}
               dependencies={dependencies}
-              handleAddDependency={(taskId: string) => {
-                const taskToAdd = dependencies.find(dep => dep.id === taskId);
-                if (taskToAdd) {
-                  setDependencies([...dependencies, taskToAdd]);
-                }
-              }}
-              handleRemoveDependency={(taskId: string) => {
-                setDependencies(dependencies.filter(dep => dep.id !== taskId));
-              }}
-              remainingTasks={[]}
+              handleAddDependency={handleAddDependency}
+              handleRemoveDependency={handleRemoveDependency}
+              remainingTasks={remainingTasks}
               subtasks={subtasks}
               setSubtasks={setSubtasks}
             />
 
             <DialogFooter>
-              <Button type="submit">{taskToEdit ? 'Save Changes' : 'Add Task'}</Button>
+              <Button type="submit">Add Task</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -8,20 +8,19 @@ interface MeetingCardProps {
     id: string;
     title: string;
     description: string;
-    start_time: string;
-    end_time: string;
-    attendees: { email: string; rsvp_status: string }[];
-    meeting_type: "online" | "in-person";
+    date: string;
+    time: string;
+    attendees: { email: string; rsvp: string }[];
+    meetingType: "online" | "in-person";
     location: string;
-    recurrence_pattern?: { frequency: string; interval: number };
+    recurrencePattern?: { frequency: string; interval: number };
   };
   onEdit: () => void;
-  onDelete: () => void;
 }
 
-export const MeetingCard = ({ meeting, onEdit, onDelete }: MeetingCardProps) => {
-  const totalAttendees = meeting.attendees?.length || 0;
-  const confirmedAttendees = meeting.attendees?.filter(a => a.rsvp_status === "accepted").length || 0;
+export const MeetingCard = ({ meeting, onEdit }: MeetingCardProps) => {
+  const totalAttendees = meeting.attendees.length;
+  const confirmedAttendees = meeting.attendees.filter(a => a.rsvp === "accepted").length;
 
   return (
     <div 
@@ -31,11 +30,11 @@ export const MeetingCard = ({ meeting, onEdit, onDelete }: MeetingCardProps) => 
       <div className="flex items-start justify-between gap-2 mb-1">
         <h4 className="font-medium text-blue-900">{meeting.title}</h4>
         <div className="flex items-center gap-2">
-          {meeting.recurrence_pattern && (
+          {meeting.recurrencePattern && (
             <Repeat className="h-4 w-4 text-blue-400" />
           )}
           <span className="text-sm text-blue-700">
-            {format(new Date(meeting.start_time), 'MMM dd, HH:mm')}
+            {format(new Date(`${meeting.date} ${meeting.time}`), 'MMM dd, HH:mm')}
           </span>
           <Button
             variant="ghost"
@@ -43,7 +42,7 @@ export const MeetingCard = ({ meeting, onEdit, onDelete }: MeetingCardProps) => 
             className="h-6 w-6"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              // TODO: Implement delete
             }}
           >
             <X className="h-4 w-4" />
@@ -55,7 +54,7 @@ export const MeetingCard = ({ meeting, onEdit, onDelete }: MeetingCardProps) => 
       
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1 text-xs text-blue-700">
-          {meeting.meeting_type === "online" ? (
+          {meeting.meetingType === "online" ? (
             <Video className="h-3 w-3" />
           ) : (
             <MapPin className="h-3 w-3" />

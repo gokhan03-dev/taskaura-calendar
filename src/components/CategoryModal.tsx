@@ -1,18 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Tag, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 export type Category = {
   id: string;
   name: string;
   color: string;
-  user_id: string | null;
 };
 
 interface CategoryModalProps {
@@ -37,74 +34,20 @@ export function CategoryModal({
   categories,
   onSave,
 }: CategoryModalProps) {
-  const { toast } = useToast();
   const [localCategories, setLocalCategories] = useState<Category[]>(categories);
   const [newCategory, setNewCategory] = useState("");
 
-  const handleAddCategory = async () => {
+  const handleAddCategory = () => {
     if (!newCategory) return;
     
-    try {
-      const { data: category, error } = await supabase
-        .from('categories')
-        .insert({
-          name: newCategory,
-          color: colors[localCategories.length % colors.length],
-        })
-        .select()
-        .single();
+    const category: Category = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newCategory,
+      color: colors[localCategories.length % colors.length],
+    };
 
-      if (error) throw error;
-
-      setLocalCategories([...localCategories, category]);
-      setNewCategory("");
-      
-      toast({
-        title: "Success",
-        description: "Category added successfully",
-      });
-    } catch (error) {
-      console.error('Error adding category:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add category",
-      });
-    }
-  };
-
-  const handleDeleteCategory = async (id: string) => {
-    // Don't allow deleting if it's the last category
-    if (localCategories.length <= 1) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "At least one category must remain",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setLocalCategories(localCategories.filter((cat) => cat.id !== id));
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete category",
-      });
-    }
+    setLocalCategories([...localCategories, category]);
+    setNewCategory("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,6 +55,15 @@ export function CategoryModal({
       e.preventDefault();
       handleAddCategory();
     }
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    setLocalCategories(localCategories.filter((cat) => cat.id !== id));
+  };
+
+  const handleSave = () => {
+    onSave(localCategories);
+    onOpenChange(false);
   };
 
   return (
@@ -125,6 +77,7 @@ export function CategoryModal({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Add New Category */}
           <div className="flex items-center gap-3">
             <Input
               placeholder="Add new category"
@@ -144,6 +97,7 @@ export function CategoryModal({
             </Button>
           </div>
 
+          {/* Category List */}
           <div className="space-y-2">
             {localCategories.map((category) => (
               <div key={category.id} className="flex items-center gap-2 text-sm">
@@ -158,13 +112,28 @@ export function CategoryModal({
                   size="icon"
                   onClick={() => handleDeleteCategory(category.id)}
                   className="h-8 w-8 hover:bg-neutral-100"
-                  disabled={localCategories.length <= 1}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            size="sm"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            size="sm"
+          >
+            Save Changes
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
