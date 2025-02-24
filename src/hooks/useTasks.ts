@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -23,23 +24,16 @@ export const useTasks = () => {
         .from('tasks')
         .select(`
           *,
-          categories (*),
+          categories!inner (*),
           subtasks (
             id,
             title,
             completed
           ),
-          task_tags (
-            tags (
+          task_tags!left (
+            tags!inner (
               id,
               name
-            )
-          ),
-          dependencies:task_dependencies!task_dependencies_dependent_task_id_fkey (
-            dependency:tasks!task_dependencies_dependency_task_id_fkey (
-              id,
-              title,
-              status
             )
           )
         `)
@@ -51,11 +45,10 @@ export const useTasks = () => {
         throw error;
       }
 
-      // Transform the data to match the Task type - keeping the same transformation logic
+      // Transform the data to match the Task type
       const transformedData = data?.map(task => ({
         ...task,
-        tags: task.task_tags?.map(tt => tt.tags) || [],
-        dependencies: task.dependencies?.map(d => d.dependency) || []
+        tags: task.task_tags?.map(tt => tt.tags) || []
       }));
 
       return transformedData as Task[];
@@ -65,100 +58,34 @@ export const useTasks = () => {
 
   // Create task mutation
   const createTask = useMutation({
-    mutationFn: async (newTask: CreateTaskInput & { 
-      subtasks?: { title: string }[]; 
-      tags?: string[];
-      dependencies?: string[];
-    }) => {
+    mutationFn: async (newTask: CreateTaskInput) => {
       if (!user) throw new Error('User must be authenticated to create tasks');
       
-      const { subtasks, tags, dependencies, ...taskData } = newTask;
-      
-      // Insert task
-      const { data: task, error: taskError } = await supabase
+      const taskWithUserId = {
+        ...newTask,
+        user_id: user.id,
+        status: 'pending' as const,
+        priority: newTask.priority || 'medium',
+      };
+
+      const { data, error } = await supabase
         .from('tasks')
-        .insert([{
-          ...taskData,
-          user_id: user.id,
-          status: 'in_progress',
-          priority: taskData.priority || 'medium',
-        }])
-        .select()
+        .insert(taskWithUserId)
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
-      if (taskError) throw taskError;
-
-      // Insert subtasks if provided
-      if (subtasks && subtasks.length > 0) {
-        const { error: subtasksError } = await supabase
-          .from('subtasks')
-          .insert(subtasks.map(st => ({
-            task_id: task.id,
-            title: st.title,
-            completed: false
-          })));
-
-        if (subtasksError) throw subtasksError;
+      if (error) {
+        console.error('Error creating task:', error);
+        throw error;
       }
-
-      // Handle tags
-      if (tags && tags.length > 0) {
-        // First ensure tags exist
-        const { data: existingTags } = await supabase
-          .from('tags')
-          .select('id, name')
-          .in('name', tags);
-
-        const existingTagNames = new Set(existingTags?.map(t => t.name) || []);
-        const newTags = tags.filter(tag => !existingTagNames.has(tag));
-
-        // Insert new tags
-        if (newTags.length > 0) {
-          const { data: newTagsData, error: newTagsError } = await supabase
-            .from('tags')
-            .insert(newTags.map(name => ({
-              name,
-              user_id: user.id
-            })))
-            .select();
-
-          if (newTagsError) throw newTagsError;
-        }
-
-        // Get all tag IDs
-        const { data: allTags, error: tagsError } = await supabase
-          .from('tags')
-          .select('id, name')
-          .in('name', tags);
-
-        if (tagsError) throw tagsError;
-
-        // Create task-tag associations
-        if (allTags) {
-          const { error: taskTagsError } = await supabase
-            .from('task_tags')
-            .insert(allTags.map(tag => ({
-              task_id: task.id,
-              tag_id: tag.id
-            })));
-
-          if (taskTagsError) throw taskTagsError;
-        }
-      }
-
-      // Handle dependencies
-      if (dependencies && dependencies.length > 0) {
-        const { error: depsError } = await supabase
-          .from('task_dependencies')
-          .insert(dependencies.map(depId => ({
-            dependent_task_id: task.id,
-            dependency_task_id: depId
-          })));
-
-        if (depsError) throw depsError;
-      }
-
-      return task;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -167,7 +94,7 @@ export const useTasks = () => {
         description: "Task created successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Create task error:', error);
       toast({
         variant: "destructive",
@@ -179,7 +106,7 @@ export const useTasks = () => {
 
   // Update task mutation
   const updateTask = useMutation({
-    mutationFn: async ({ id, ...updates }: UpdateTaskInput) => {
+    mutationFn: async ({ id, ...updates }: UpdateTaskInput & { id: string }) => {
       if (!user) throw new Error('User must be authenticated to update tasks');
 
       const { data: existingTask } = await supabase
@@ -202,7 +129,14 @@ export const useTasks = () => {
             : updates.completed_at,
         })
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          categories (*),
+          subtasks (*),
+          task_tags (
+            tags (*)
+          )
+        `)
         .single();
 
       if (error) {

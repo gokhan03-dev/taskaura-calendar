@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/Layout/Sidebar";
 import { Header } from "@/components/Layout/Header";
 import { Clock, Calendar, List, Plus, CalendarPlus } from "lucide-react";
@@ -32,7 +31,7 @@ const Index = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-  const { tasks, isLoading: tasksLoading, deleteTask, subscribeToTasks } = useTasks();
+  const { tasks, isLoading: tasksLoading, subscribeToTasks } = useTasks();
   const { meetings, isLoading: meetingsLoading, deleteMeeting, subscribeToMeetings } = useMeetings();
 
   useEffect(() => {
@@ -177,7 +176,6 @@ const Index = () => {
                       key={item.id}
                       task={item}
                       onEdit={() => handleTaskEdit(item)}
-                      onDelete={() => deleteTask.mutate(item.id)}
                     />
                   ) : (
                     <MeetingCard
@@ -199,7 +197,6 @@ const Index = () => {
                       key={item.id}
                       task={item}
                       onEdit={() => handleTaskEdit(item)}
-                      onDelete={() => deleteTask.mutate(item.id)}
                     />
                   ) : (
                     <MeetingCard
@@ -221,7 +218,6 @@ const Index = () => {
                       key={item.id}
                       task={item}
                       onEdit={() => handleTaskEdit(item)}
-                      onDelete={() => deleteTask.mutate(item.id)}
                     />
                   ) : (
                     <MeetingCard
