@@ -35,6 +35,13 @@ export const useTasks = () => {
               id,
               name
             )
+          ),
+          dependencies:task_dependencies!dependent_task_id(
+            dependency:tasks(
+              id,
+              title,
+              status
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -45,32 +52,11 @@ export const useTasks = () => {
         throw error;
       }
 
-      // Fetch dependencies separately to avoid ambiguous relationship
-      const { data: dependencies, error: depsError } = await supabase
-        .from('task_dependencies')
-        .select(`
-          dependent_task_id,
-          dependency_task_id,
-          tasks!task_dependencies_dependency_task_id_fkey (
-            id,
-            title,
-            status
-          )
-        `)
-        .in('dependent_task_id', data?.map(t => t.id) || []);
-
-      if (depsError) {
-        console.error('Error fetching dependencies:', depsError);
-        throw depsError;
-      }
-
       // Transform the data to match the Task type
       const transformedData = data?.map(task => ({
         ...task,
         tags: task.task_tags?.map(tt => tt.tags) || [],
-        dependencies: dependencies
-          ?.filter(d => d.dependent_task_id === task.id)
-          ?.map(d => d.tasks) || []
+        dependencies: task.dependencies?.map(d => d.dependency) || []
       }));
 
       return transformedData as Task[];
