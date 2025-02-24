@@ -125,7 +125,7 @@ export const useTasks = () => {
             const { data: newTag, error: tagError } = await supabase
               .from('tags')
               .upsert({ 
-                name: tag.label, // Use label as name in the database
+                name: tag.label,
                 user_id: user.id 
               })
               .select()
@@ -168,15 +168,15 @@ export const useTasks = () => {
       // Transform the final task data to match the Task type
       const transformedTask = {
         ...finalTask,
-        tags: finalTask.task_tags?.map(tt => ({
+        tags: (finalTask as DBTask).task_tags?.map(tt => ({
           id: tt.tags.id,
-          label: tt.tags.name // Transform 'name' to 'label'
+          label: tt.tags.name
         })) || []
       };
 
       console.log('Final transformed task:', transformedTask);
 
-      return transformedTask;
+      return transformedTask as Task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
@@ -234,7 +234,17 @@ export const useTasks = () => {
         console.error('Error updating task:', error);
         throw error;
       }
-      return data;
+
+      // Transform the data to match the Task type
+      const transformedTask = {
+        ...data,
+        tags: (data as DBTask).task_tags?.map(tt => ({
+          id: tt.tags.id,
+          label: tt.tags.name
+        })) || []
+      };
+
+      return transformedTask as Task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', user?.id] });
