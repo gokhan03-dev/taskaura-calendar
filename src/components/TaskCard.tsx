@@ -1,17 +1,15 @@
 
 import { format } from "date-fns";
 import { 
-  X, 
-  Tag, 
-  List, 
   Repeat, 
-  Users,
+  Tag,
   Trash2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Task } from "@/lib/types/task";
 import { useTasks } from "@/hooks/useTasks";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskCardProps {
   task: Task;
@@ -20,6 +18,7 @@ interface TaskCardProps {
 
 export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
   const { updateTask, deleteTask } = useTasks();
+  const { toast } = useToast();
   const isCompleted = task.status === 'completed';
 
   const handleToggleCompletion = async (e: React.MouseEvent) => {
@@ -30,8 +29,17 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
         status: isCompleted ? 'pending' : 'completed',
         completed_at: isCompleted ? null : new Date().toISOString(),
       });
+      toast({
+        title: isCompleted ? "Task marked as pending" : "Task completed",
+        description: task.title,
+      });
     } catch (error) {
       console.error('Error toggling task completion:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to update task",
+        description: "Please try again later",
+      });
     }
   };
 
@@ -39,8 +47,17 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
     e.stopPropagation();
     try {
       await deleteTask.mutateAsync(task.id);
+      toast({
+        title: "Task deleted",
+        description: task.title,
+      });
     } catch (error) {
       console.error('Error deleting task:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to delete task",
+        description: "Please try again later",
+      });
     }
   };
 
@@ -56,17 +73,26 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
           onClick={handleToggleCompletion}
         />
         <div className="flex-1">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h4 className={`font-medium ${isCompleted ? 'line-through text-neutral-400' : ''}`}>
-              {task.title}
-            </h4>
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex-1">
+              <h4 className={`font-medium ${isCompleted ? 'line-through text-neutral-400' : ''}`}>
+                {task.title}
+              </h4>
+              {task.description && (
+                <p className={`text-sm text-neutral-500 mt-1 ${isCompleted ? 'line-through' : ''}`}>
+                  {task.description}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
               {task.recurrence_pattern && (
                 <Repeat className="h-4 w-4 text-neutral-400" />
               )}
-              <span className="text-sm text-neutral-500">
-                {task.due_date && format(new Date(task.due_date), 'MMM dd')}
-              </span>
+              {task.due_date && (
+                <span className="text-sm text-neutral-500 whitespace-nowrap">
+                  {format(new Date(task.due_date), 'MMM dd')}
+                </span>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -77,12 +103,20 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
               </Button>
             </div>
           </div>
-          <p className={`text-sm text-neutral-500 mb-3 ${isCompleted ? 'line-through' : ''}`}>
-            {task.description}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
+          
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {task.priority && (
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-green-100 text-green-700'
+              }`}>
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+              </span>
+            )}
             {task.category_id && (
-              <span className="px-2 py-1 text-xs rounded-md bg-neutral-100">
+              <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-neutral-100 text-neutral-600">
+                <Tag className="h-3 w-3" />
                 {task.category_id}
               </span>
             )}
