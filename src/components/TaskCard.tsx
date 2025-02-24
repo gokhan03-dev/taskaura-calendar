@@ -11,23 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getAriaLabel } from "@/utils/accessibility";
 import { memo } from "react";
+import { useTasks } from "@/hooks/use-tasks";
 
 interface TaskCardProps {
   task: {
     id: string;
     title: string;
     description: string;
-    date: string;
+    due_date: string | null;
     category: string;
-    completed: boolean;
+    completed_at: string | null;
     priority: "high" | "medium" | "low";
     tags?: { id: string; label: string }[];
     subtasks?: { id: string; title: string; completed: boolean }[];
     recurrencePattern?: { frequency: string; interval: number };
   };
   onEdit: () => void;
-  onDelete?: (id: string) => void;
-  onToggleComplete?: (id: string, completed: boolean) => void;
 }
 
 export const priorityColors = {
@@ -36,12 +35,9 @@ export const priorityColors = {
   low: "#0EA5E9" // Ocean Blue
 } as const;
 
-const TaskCardComponent = ({ 
-  task, 
-  onEdit, 
-  onDelete, 
-  onToggleComplete 
-}: TaskCardProps) => {
+const TaskCardComponent = ({ task, onEdit }: TaskCardProps) => {
+  const { deleteTask, toggleTaskCompletion } = useTasks();
+  
   const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const visibleTags = task.tags?.slice(0, 3) || [];
@@ -49,16 +45,15 @@ const TaskCardComponent = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onDelete) {
-      onDelete(task.id);
-    }
+    deleteTask.mutate(task.id);
   };
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onToggleComplete) {
-      onToggleComplete(task.id, !task.completed);
-    }
+    toggleTaskCompletion.mutate({
+      id: task.id,
+      completed: !task.completed_at
+    });
   };
 
   return (
@@ -76,10 +71,11 @@ const TaskCardComponent = ({
     >
       <div className="flex items-start gap-3">
         <Checkbox 
-          checked={task.completed}
+          checked={!!task.completed_at}
           className="mt-1"
           onClick={handleToggleComplete}
-          aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+          aria-label={`Mark ${task.title} as ${task.completed_at ? 'incomplete' : 'complete'}`}
+          disabled={toggleTaskCompletion.isPending}
         />
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-1">
@@ -93,7 +89,7 @@ const TaskCardComponent = ({
                 }}
                 aria-hidden="true"
               />
-              <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>
+              <h4 className={`font-medium ${task.completed_at ? 'line-through text-neutral-400' : ''}`}>
                 {task.title}
               </h4>
             </div>
@@ -105,7 +101,7 @@ const TaskCardComponent = ({
                 />
               )}
               <span className="text-sm text-neutral-500">
-                {format(new Date(task.date), 'MMM dd')}
+                {task.due_date ? format(new Date(task.due_date), 'MMM dd') : ''}
               </span>
               <Button
                 variant="ghost"
@@ -113,12 +109,13 @@ const TaskCardComponent = ({
                 className="h-6 w-6"
                 onClick={handleDelete}
                 aria-label="Delete task"
+                disabled={deleteTask.isPending}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
-          <p className={`text-sm text-neutral-500 mb-3 ${task.completed ? 'line-through' : ''}`}>
+          <p className={`text-sm text-neutral-500 mb-3 ${task.completed_at ? 'line-through' : ''}`}>
             {task.description}
           </p>
           <div className="flex flex-wrap items-center gap-2">

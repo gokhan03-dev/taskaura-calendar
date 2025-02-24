@@ -15,6 +15,8 @@ import { CategoryModal, type Category } from "./CategoryModal";
 import { type TagType } from "./TagInput";
 import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
+import { useTasks } from "@/hooks/use-tasks";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Task {
   id: string;
@@ -28,6 +30,8 @@ interface TaskDialogProps {
 }
 
 export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
+  const { createTask } = useTasks();
+  const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("work");
@@ -57,21 +61,41 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     setDependencies(dependencies.filter(dep => dep.id !== taskId));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({
-      title,
-      description,
-      category,
-      date,
-      priority,
-      recurrencePattern,
-      reminderSettings,
-      tags,
-      dependencies,
-      subtasks,
-    });
-    onOpenChange(false);
+    
+    try {
+      await createTask.mutateAsync({
+        title,
+        description,
+        due_date: date,
+        category_id: category,
+        priority,
+        tags,
+        subtasks,
+        dependencies: dependencies.map(dep => dep.id),
+      });
+      
+      onOpenChange(false);
+      
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setDate("");
+      setCategory("work");
+      setPriority("medium");
+      setTags([]);
+      setDependencies([]);
+      setSubtasks([]);
+      
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const remainingTasks = availableTasks.filter(task => !dependencies.some(dep => dep.id === task.id));
@@ -116,7 +140,9 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
             />
 
             <DialogFooter>
-              <Button type="submit">Add Task</Button>
+              <Button type="submit" disabled={createTask.isPending}>
+                {createTask.isPending ? "Creating..." : "Add Task"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -145,4 +171,3 @@ export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDial
     </>
   );
 }
-
