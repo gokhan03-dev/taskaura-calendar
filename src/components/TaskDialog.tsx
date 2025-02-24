@@ -17,7 +17,7 @@ import { type Subtask } from "./SubtaskInput";
 import { TaskFormFields } from "./task/TaskFormFields";
 import { useTasks } from "@/hooks/use-tasks";
 import { useToast } from "@/components/ui/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Task {
@@ -34,6 +34,7 @@ interface TaskDialogProps {
 export function TaskDialog({ open, onOpenChange, availableTasks = [] }: TaskDialogProps) {
   const { createTask } = useTasks();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<string>("");
