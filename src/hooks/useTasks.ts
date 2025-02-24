@@ -80,7 +80,7 @@ export const useTasks = () => {
         .insert([{
           ...taskData,
           user_id: user.id,
-          status: 'pending',
+          status: 'in_progress',
           priority: taskData.priority || 'medium',
         }])
         .select()
@@ -114,7 +114,7 @@ export const useTasks = () => {
 
         // Insert new tags
         if (newTags.length > 0) {
-          const { error: newTagsError } = await supabase
+          const { data: newTagsData, error: newTagsError } = await supabase
             .from('tags')
             .insert(newTags.map(name => ({
               name,
@@ -179,7 +179,7 @@ export const useTasks = () => {
 
   // Update task mutation
   const updateTask = useMutation({
-    mutationFn: async ({ id, ...updates }: UpdateTaskInput & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: UpdateTaskInput) => {
       if (!user) throw new Error('User must be authenticated to update tasks');
 
       const { data: existingTask } = await supabase
@@ -202,14 +202,7 @@ export const useTasks = () => {
             : updates.completed_at,
         })
         .eq('id', id)
-        .select(`
-          *,
-          categories (*),
-          subtasks (*),
-          task_tags (
-            tags (*)
-          )
-        `)
+        .select()
         .single();
 
       if (error) {

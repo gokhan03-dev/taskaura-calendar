@@ -7,7 +7,7 @@ export interface Task {
   category_id: string | null;
   title: string;
   description: string | null;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'in_progress' | 'completed';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
   completed_at: string | null;
@@ -26,6 +26,6 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
   id: string;
-  status?: 'pending' | 'in_progress' | 'completed';
+  status?: 'in_progress' | 'completed';
   completed_at?: string | null;
 }

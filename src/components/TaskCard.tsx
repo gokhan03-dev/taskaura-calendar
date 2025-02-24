@@ -12,9 +12,10 @@ interface TaskCardProps {
     subtasks?: { id: string; title: string; completed: boolean }[];
   };
   onEdit: () => void;
+  onDelete: () => void;
 }
 
-export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
+export const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
   const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
@@ -22,10 +23,12 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
   return (
     <div 
       className="bg-white rounded-xl p-4 shadow-glass hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onEdit}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex-1">
+        <div 
+          className="flex-1"
+          onClick={onEdit}  
+        >
           <h4 className="font-medium text-neutral-900 mb-1">{task.title}</h4>
           {task.description && (
             <p className="text-sm text-neutral-600 mb-2">{task.description}</p>
@@ -35,6 +38,10 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
           variant="ghost"
           size="icon"
           className="h-6 w-6"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
         >
           <Trash2 className="h-4 w-4 text-neutral-500 hover:text-red-500" />
         </Button>
