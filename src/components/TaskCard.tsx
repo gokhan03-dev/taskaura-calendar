@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { 
   X, 
@@ -26,10 +25,10 @@ interface TaskCardProps {
   onEdit: () => void;
 }
 
-const priorityColors = {
-  high: "#ea384c", // Red
-  medium: "#FEF7CD", // Yellow
-  low: "#0EA5E9" // Blue
+export const priorityColors = {
+  high: "#F97316", // Bright Orange
+  medium: "#FFB800", // Golden Yellow
+  low: "#0EA5E9" // Ocean Blue
 } as const;
 
 export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
@@ -56,11 +55,11 @@ export const TaskCard = ({ task, onEdit }: TaskCardProps) => {
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
               <Star 
-                className="h-4 w-4" 
+                className="h-4 w-4 transition-colors" 
                 style={{ 
                   color: priorityColors[task.priority],
                   fill: priorityColors[task.priority],
-                  opacity: task.priority === "low" ? 0.5 : 1
+                  opacity: task.priority === "low" ? 0.7 : 1
                 }}
               />
               <h4 className={`font-medium ${task.completed ? 'line-through text-neutral-400' : ''}`}>

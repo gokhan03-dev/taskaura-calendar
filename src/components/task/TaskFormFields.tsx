@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Plus, RepeatIcon, Settings2, Link2, X, Flag } from "lucide-react";
+import { Bell, Plus, RepeatIcon, Settings2, Link2, X, Flag, Star } from "lucide-react";
 import { TagInput, TagType } from "../TagInput";
 import { SubtaskInput, type Subtask } from "../SubtaskInput";
 import { Category } from "../CategoryModal";
@@ -115,14 +114,35 @@ export function TaskFormFields({
         </Label>
         <Select value={priority} onValueChange={setPriority}>
           <SelectTrigger className="col-span-3">
-            <SelectValue />
+            <SelectValue placeholder="Select priority">
+              {priority && (
+                <div className="flex items-center gap-2">
+                  <Star 
+                    className="h-4 w-4" 
+                    style={{ 
+                      color: priorityColors[priority],
+                      fill: priorityColors[priority],
+                      opacity: priority === "low" ? 0.7 : 1
+                    }}
+                  />
+                  <span className="capitalize">{priority}</span>
+                </div>
+              )}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {Object.entries(priorityColors).map(([level, color]) => (
+              {(Object.keys(priorityColors) as Array<keyof typeof priorityColors>).map((level) => (
                 <SelectItem key={level} value={level}>
                   <div className="flex items-center gap-2">
-                    <Flag className="h-4 w-4" style={{ color }} />
+                    <Star 
+                      className="h-4 w-4" 
+                      style={{ 
+                        color: priorityColors[level],
+                        fill: priorityColors[level],
+                        opacity: level === "low" ? 0.7 : 1
+                      }}
+                    />
                     <span className="capitalize">{level}</span>
                   </div>
                 </SelectItem>
@@ -277,4 +297,3 @@ export function TaskFormFields({
     </div>
   );
 }
-
