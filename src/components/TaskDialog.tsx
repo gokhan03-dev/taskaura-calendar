@@ -19,6 +19,7 @@ import { TaskFormFields } from "./task/TaskFormFields";
 import { useTasks } from "@/hooks/useTasks";
 import { Task } from "@/lib/types/task";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ interface TaskDialogProps {
 
 export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) {
   const { createTask, updateTask } = useTasks();
+  const { toast } = useToast();
   const [title, setTitle] = useState(taskToEdit?.title || "");
   const [description, setDescription] = useState(taskToEdit?.description || "");
   const [category, setCategory] = useState<string | null>(taskToEdit?.category_id || null);
@@ -43,6 +45,7 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
   const [dependencies, setDependencies] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       const { data: fetchedCategories, error } = await supabase
@@ -62,6 +65,48 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
     fetchCategories();
   }, []);
 
+  // Fetch task-specific data when editing
+  useEffect(() => {
+    const fetchTaskData = async () => {
+      if (taskToEdit) {
+        // Fetch tags
+        const { data: tagData, error: tagError } = await supabase
+          .from('task_tags')
+          .select(`
+            tags (
+              id,
+              name
+            )
+          `)
+          .eq('task_id', taskToEdit.id);
+
+        if (!tagError && tagData) {
+          const formattedTags = tagData
+            .map(t => t.tags)
+            .filter(Boolean)
+            .map(tag => ({
+              id: tag.id,
+              label: tag.name
+            }));
+          setTags(formattedTags);
+        }
+
+        // Fetch subtasks
+        const { data: subtaskData, error: subtaskError } = await supabase
+          .from('subtasks')
+          .select('*')
+          .eq('task_id', taskToEdit.id);
+
+        if (!subtaskError && subtaskData) {
+          setSubtasks(subtaskData);
+        }
+      }
+    };
+
+    fetchTaskData();
+  }, [taskToEdit]);
+
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
       setTitle(taskToEdit?.title || "");
@@ -69,34 +114,101 @@ export function TaskDialog({ open, onOpenChange, taskToEdit }: TaskDialogProps) 
       setCategory(taskToEdit?.category_id || null);
       setDate(taskToEdit?.due_date ? format(new Date(taskToEdit.due_date), 'yyyy-MM-dd') : "");
       setPriority(taskToEdit?.priority || 'medium');
+    } else {
+      setTags([]);
+      setSubtasks([]);
     }
   }, [open, taskToEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const taskData = {
+        title,
+        description,
+        category_id: category,
+        due_date: date || undefined,
+        priority,
+      };
+
+      let taskId: string;
+      
       if (taskToEdit) {
         await updateTask.mutateAsync({
           id: taskToEdit.id,
-          title,
-          description,
-          category_id: category,
-          due_date: date || undefined,
-          priority,
+          ...taskData
         });
+        taskId = taskToEdit.id;
       } else {
-        await createTask.mutateAsync({
-          title,
-          description,
-          category_id: category,
-          due_date: date || undefined,
-          priority,
-        });
+        const newTask = await createTask.mutateAsync(taskData);
+        taskId = newTask.id;
       }
+
+      // Handle tags
+      if (tags.length > 0) {
+        // First, remove existing tags if editing
+        if (taskToEdit) {
+          await supabase
+            .from('task_tags')
+            .delete()
+            .eq('task_id', taskId);
+        }
+
+        // Insert new tags
+        for (const tag of tags) {
+          // Create tag if it doesn't exist
+          let tagId = tag.id;
+          if (!tagId) {
+            const { data: newTag, error: tagError } = await supabase
+              .from('tags')
+              .upsert({ name: tag.label })
+              .select()
+              .single();
+
+            if (tagError) throw tagError;
+            tagId = newTag.id;
+          }
+
+          // Link tag to task
+          await supabase
+            .from('task_tags')
+            .upsert({ task_id: taskId, tag_id: tagId });
+        }
+      }
+
+      // Handle subtasks
+      if (subtasks.length > 0) {
+        // First, remove existing subtasks if editing
+        if (taskToEdit) {
+          await supabase
+            .from('subtasks')
+            .delete()
+            .eq('task_id', taskId);
+        }
+
+        // Insert new subtasks
+        await supabase
+          .from('subtasks')
+          .insert(subtasks.map(subtask => ({
+            task_id: taskId,
+            title: subtask.title,
+            completed: subtask.completed || false
+          })));
+      }
+
+      toast({
+        title: "Success",
+        description: taskToEdit ? "Task updated successfully" : "Task created successfully",
+      });
       
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to save task:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save task. Please try again.",
+      });
     }
   };
 
