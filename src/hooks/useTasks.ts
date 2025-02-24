@@ -5,6 +5,37 @@ import { useAuth } from '@/components/AuthProvider';
 import { Task, CreateTaskInput, UpdateTaskInput } from '@/lib/types/task';
 import { useToast } from '@/hooks/use-toast';
 
+// Define the database types
+interface DBTask {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  categories: {
+    id: string;
+    name: string;
+    color: string;
+  } | null;
+  subtasks: Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+  }>;
+  task_tags?: Array<{
+    tags: {
+      id: string;
+      name: string;
+    };
+  }>;
+}
+
 export const useTasks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -46,11 +77,11 @@ export const useTasks = () => {
       }
 
       // Transform the data to match the Task type
-      const transformedData = data?.map(task => ({
+      const transformedData = (data as DBTask[])?.map(task => ({
         ...task,
         tags: task.task_tags?.map(tt => ({
           id: tt.tags.id,
-          label: tt.tags.name // Transform 'name' to 'label'
+          label: tt.tags.name
         })) || []
       }));
 
